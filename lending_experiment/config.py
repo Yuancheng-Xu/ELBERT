@@ -3,7 +3,6 @@ import torch
 from lending_experiment.agents.human_designed_policies.threshold_policies import ThresholdPolicy
 
 ########## Experiment Setup Parameters ##########
-# EXP_DIR = './experiments/advantage_regularized_ppo/'
 EXP_DIR = './experiments/advantage_regularized_ppo/'
 SAVE_DIR = f'{EXP_DIR}/models/'
 # PPO model paths to evaluate
@@ -29,7 +28,7 @@ BANK_STARTING_CASH= 10000
 INTEREST_RATE = 1
 CLUSTER_SHIFT_INCREMENT= 0.01
 CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS
-EP_TIMESTEPS = 2000
+EP_TIMESTEPS = 2000 # done=True if rollout for more than ep_timesteps steps by PPO_wrapper; in lending env, done =True also when bank cash < one loan
 MAXIMIZE_REWARD = ThresholdPolicy.MAXIMIZE_REWARD
 EQUALIZE_OPPORTUNITY = ThresholdPolicy.EQUALIZE_OPPORTUNITY
 
@@ -37,7 +36,9 @@ EQUALIZE_OPPORTUNITY = ThresholdPolicy.EQUALIZE_OPPORTUNITY
 TRAIN_TIMESTEPS = 10_000_000  # Total train time
 LEARNING_RATE = 0.00001
 POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
-                     net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])])
+                     net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])]) # xyc note: this is older sb3 used by Eric, which allowed shared layers
+POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,
+                     net_arch = dict(vf=[256, 128], pi=[256, 128])) # new sb3: shared layers is not defined net_arch here. 
 SAVE_FREQ = 10000
 REGULARIZE_ADVANTAGE = True
 # Weights for delta bank cash and delta terms in the reward for the lending environment

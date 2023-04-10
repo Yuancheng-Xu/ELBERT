@@ -20,6 +20,10 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 from yaml import full_load
 
+import sys
+# sys.path.append('..')
+sys.path.insert(1, '/cmlscratch/xic/FairRL/')
+
 from lending_experiment.agents.human_designed_policies import oracle_lending_agent
 from lending_experiment.agents.human_designed_policies.classifier_agents import ScoringAgentParams
 from lending_experiment.agents.human_designed_policies.threshold_policies import ThresholdPolicy
@@ -289,6 +293,8 @@ def main():
     parser.add_argument('--display_eval_path', dest='display_eval_path', type=str, default=None)
     parser.add_argument('--show_train_progress', action='store_true')
     args = parser.parse_args()
+
+    print('\n\n\n',args,'\n\n\n')
 
     env_params = DelayedImpactParams(
         applicant_distribution=two_group_credit_clusters(
