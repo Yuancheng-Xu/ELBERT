@@ -20,7 +20,7 @@ from stable_baselines3.common.type_aliases import GymObs
 from lending_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 import numpy as np
 import torch
-import tqdm
+# import tqdm
 import random
 
 class DummyVecEnv_fair(DummyVecEnv):
@@ -127,12 +127,12 @@ def evaluate_fair(env, agent, num_eps, write_path):
         'cash': 0,
         'tpr_0': -1,
         'tpr_1': -1,
-        # helper
+        # helper variables
         'cash_over_time': np.zeros((num_eps, num_timesteps)), 
         'r_U': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  
         'r_B': np.zeros((num_eps, num_timesteps, NUM_GROUPS)), 
 
-        # old
+        # old (can be removed later)
         'tot_loans': np.zeros((num_eps, NUM_GROUPS)),  # The number of loans per group per episode
         'tot_tp': np.zeros((num_eps, NUM_GROUPS)),  # The number of true positives, or no default given loan accepted, per group per episode
         'tot_fp': np.zeros((num_eps, NUM_GROUPS)),  # The number of false positives, or default given loan accepted, per group per episode
@@ -157,60 +157,54 @@ def evaluate_fair(env, agent, num_eps, write_path):
         obs = env.reset()
         done = False
         print(f'Evaluation:  Episode {ep}:')
-        for t in tqdm.trange(num_timesteps):
+        # for t in tqdm.trange(num_timesteps):
+        for t in range(num_timesteps):
             action = agent.predict(obs)[0]
 
             #################################################### sanity check begins
-            group_id = np.argmax(env.state.group)
-            r_u, r_b = [0,0],[0,0] # for sanity check
-            # Add to loans if the agent wants to loan
-            if action == 1:
-                eval_data['tot_loans'][ep][group_id] += 1
-                # Check if agent would default
-                if env.state.will_default:
-                    eval_data['tot_fp'][ep][group_id] += 1
-                else:
-                    eval_data['tot_tp'][ep][group_id] += 1
-                    r_u[group_id] = 1
-                    r_b[group_id] = 1
-            elif action == 0:
-                if env.state.will_default:
-                    eval_data['tot_tn'][ep][group_id] += 1
-                else:
-                    eval_data['tot_fn'][ep][group_id] += 1
-                    r_b[group_id] = 1
+            # group_id = np.argmax(env.state.group)
+            # r_u, r_b = [0,0],[0,0] # for sanity check
+            # # Add to loans if the agent wants to loan
+            # if action == 1:
+            #     eval_data['tot_loans'][ep][group_id] += 1
+            #     # Check if agent would default
+            #     if env.state.will_default:
+            #         eval_data['tot_fp'][ep][group_id] += 1
+            #     else:
+            #         eval_data['tot_tp'][ep][group_id] += 1
+            #         r_u[group_id] = 1
+            #         r_b[group_id] = 1
+            # elif action == 0:
+            #     if env.state.will_default:
+            #         eval_data['tot_tn'][ep][group_id] += 1
+            #     else:
+            #         eval_data['tot_fn'][ep][group_id] += 1
+            #         r_b[group_id] = 1
 
-            # Update TPR for both groups per timestep.
-            # In the edge case where denom is 0, set TPR to 0
-            eval_data['tot_tpr'][ep] = np.divide(
-                eval_data['tot_tp'][ep],
-                eval_data['tot_tp'][ep] + eval_data['tot_fn'][ep],
-                out=np.zeros_like(eval_data['tot_tp'][ep]),
-                where=(eval_data['tot_tp'][ep] + eval_data['tot_fn'][ep])!=0)
-            # Update total loans and TPR observed so far
-            eval_data['tot_loans_over_time'][ep][t] = eval_data['tot_loans'][ep]
-            eval_data['tot_tpr_over_time'][ep][t] = eval_data['tot_tpr'][ep]
+            # # Update TPR for both groups per timestep.
+            # # In the edge case where denom is 0, set TPR to 0
+            # eval_data['tot_tpr'][ep] = np.divide(
+            #     eval_data['tot_tp'][ep],
+            #     eval_data['tot_tp'][ep] + eval_data['tot_fn'][ep],
+            #     out=np.zeros_like(eval_data['tot_tp'][ep]),
+            #     where=(eval_data['tot_tp'][ep] + eval_data['tot_fn'][ep])!=0)
+            # # Update total loans and TPR observed so far
+            # eval_data['tot_loans_over_time'][ep][t] = eval_data['tot_loans'][ep]
+            # eval_data['tot_tpr_over_time'][ep][t] = eval_data['tot_tpr'][ep]
 
-            eval_data['tot_tp_over_time'][ep][t] = eval_data['tot_tp'][ep]
-            eval_data['tot_fp_over_time'][ep][t] = eval_data['tot_fp'][ep]
-            eval_data['tot_tn_over_time'][ep][t] = eval_data['tot_tn'][ep]
-            eval_data['tot_fn_over_time'][ep][t] = eval_data['tot_fn'][ep]
+            # eval_data['tot_tp_over_time'][ep][t] = eval_data['tot_tp'][ep]
+            # eval_data['tot_fp_over_time'][ep][t] = eval_data['tot_fp'][ep]
+            # eval_data['tot_tn_over_time'][ep][t] = eval_data['tot_tn'][ep]
+            # eval_data['tot_fn_over_time'][ep][t] = eval_data['tot_fn'][ep]
 
-            old_bank_cash = env.state.bank_cash
+            # old_bank_cash = env.state.bank_cash
+            #################################################### sanity check ends
 
             obs, rewards, done, infos = env.step(action)      ########### Inside sanity check, only this line should not be removed!
 
-            bank_cash = env.state.bank_cash
-
-            # r = reward_fn(old_bank_cash=old_bank_cash,
-            #               bank_cash=bank_cash,
-            #             #   tpr=eval_data['tot_tpr'][ep],
-            #             #   zeta0=EVAL_ZETA_0,
-            #             #   zeta1=EVAL_ZETA_1,
-            #               ) # in LendingReward_fair, zeta is not used anymore
-
-            # eval_data['tot_rews_over_time'][ep][t] = r
-            eval_data['tot_bank_cash_over_time'][ep][t] = bank_cash
+            #################################################### sanity check begins
+            # bank_cash = env.state.bank_cash
+            # eval_data['tot_bank_cash_over_time'][ep][t] = bank_cash
 
             #################################################### sanity check ends
 
@@ -219,13 +213,11 @@ def evaluate_fair(env, agent, num_eps, write_path):
             _, eval_data['r_U'][ep][t][0], eval_data['r_B'][ep][t][0], eval_data['r_U'][ep][t][1], eval_data['r_B'][ep][t][1] = rewards
 
             #################################################### sanity check begins
-            assert eval_data['r_U'][ep][t][0] == r_u[0]
-            assert eval_data['r_B'][ep][t][0] == r_b[0]
-            assert eval_data['r_U'][ep][t][1] == r_u[1]
-            assert eval_data['r_B'][ep][t][1] == r_b[1]
-            assert bank_cash == eval_data['cash_over_time'][ep][t]
-
-
+            # assert eval_data['r_U'][ep][t][0] == r_u[0]
+            # assert eval_data['r_B'][ep][t][0] == r_b[0]
+            # assert eval_data['r_U'][ep][t][1] == r_u[1]
+            # assert eval_data['r_B'][ep][t][1] == r_b[1]
+            # assert bank_cash == eval_data['cash_over_time'][ep][t]
             #################################################### sanity check ends
 
             if done:
@@ -233,25 +225,25 @@ def evaluate_fair(env, agent, num_eps, write_path):
 
     # essential 
     U = np.sum(eval_data['r_U'],axis=(0,1))
-    B = np.sum(eval_data['r_U'],axis=(0,1))
-    print('U: should be just two number array',U)
-    print('B',B)
+    B = np.sum(eval_data['r_B'],axis=(0,1))
+    # print('U: should be just two number array',U)
+    # print('B',B)
     eval_data['tpr_0'] = U[0]/B[0]
     eval_data['tpr_1'] = U[1]/B[1]
     eval_data['cash'] = eval_data['cash_over_time'][:,-1].mean()
 
 
     #################################################### sanity check begins
-    assert eval_data['tot_bank_cash_over_time'][:,-1].mean() == eval_data['cash']
-    print('Eric: TPR_0 with many episodes: ', eval_data['tot_tpr'][:,0])
-    print('Eric: TPR_1 with many episodes: ', eval_data['tot_tpr'][:,1])
-    print('Our TPR_0:{}, TPR_1:{}'.format(eval_data['tpr_0'],eval_data['tpr_1']))
+    # assert eval_data['tot_bank_cash_over_time'][:,-1].mean() == eval_data['cash']
+    # print('Eric: TPR_0 with many episodes: ', eval_data['tot_tpr'][:,0])
+    # print('Eric: TPR_1 with many episodes: ', eval_data['tot_tpr'][:,1])
+    # print('Our TPR_0:{}, TPR_1:{}'.format(eval_data['tpr_0'],eval_data['tpr_1']))
     #################################################### sanity check ends
 
     # write to csv
 
-    Path(f'{eval_path}/{name}/').mkdir(parents=True, exist_ok=True)
-    for key in eval_data.keys():
-        np.save(f'{eval_path}/{name}/{key}.npy', eval_data[key])
+    # Path(f'{eval_path}/{name}/').mkdir(parents=True, exist_ok=True)
+    # for key in eval_data.keys():
+    #     np.save(f'{eval_path}/{name}/{key}.npy', eval_data[key])
 
     return eval_data

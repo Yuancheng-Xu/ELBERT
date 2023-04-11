@@ -19,6 +19,15 @@ from agents.ppo.sb3.buffers_fair import RolloutBuffer_fair
 from agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair, BasePolicy
 from agents.ppo.sb3.utils_fair import evaluate_fair
 
+# create env for evaluation 
+from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
+    CLUSTER_SHIFT_INCREMENT
+from lending_experiment.environments.lending import DelayedImpactEnv
+from lending_experiment.environments.rewards import LendingReward_fair
+from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
+from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
+
+
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
     """
@@ -302,12 +311,25 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
 
             self.train()
 
-            # evaluation
-            # self.policy.set_training_mode(False)
-            # create another env! How?
-            # Question: when collect_rollout, where do you reset the env?
-            # ...
-            # evaluate_fair()
+            ### evaluation
+            # TODO: set eval_interval
+            # TODO: set write_path for csv file
+            self.policy.set_training_mode(False)
+            # new env for eval
+            env_params = DelayedImpactParams(
+                applicant_distribution=two_group_credit_clusters(
+                    cluster_probabilities=CLUSTER_PROBABILITIES,
+                    group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
+                bank_starting_cash=BANK_STARTING_CASH,
+                interest_rate=INTEREST_RATE,
+                cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
+            )
+            env_eval = DelayedImpactEnv(env_params)
+            env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair) # Note: episode length is the dafault EP_TIMESTEPS (2000), not 10000 used by Eric
+            # evaluate
+            evaluate_fair(env_eval, self.policy, num_eps=10, write_path=None)
+            
+
 
         callback.on_training_end()
 
