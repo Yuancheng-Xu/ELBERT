@@ -296,7 +296,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 bias_loss = bias_estimate * (ratio_term_0 - ratio_term_1) * (- 2 * self.bias_coef)
                 
                 # value loss for 5 rewards
-                value_loss = sum(value_loss)
+                value_loss = sum(value_loss) 
 
                 # final loss
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss + bias_loss

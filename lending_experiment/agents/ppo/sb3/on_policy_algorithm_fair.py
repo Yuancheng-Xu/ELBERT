@@ -22,7 +22,7 @@ from agents.ppo.sb3.utils_fair import evaluate_fair
 
 # create env for evaluation 
 from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
-    CLUSTER_SHIFT_INCREMENT,EVAL_NUM_EPS
+    CLUSTER_SHIFT_INCREMENT,EVAL_NUM_EPS,EP_TIMESTEPS_EVAL
 from lending_experiment.environments.lending import DelayedImpactEnv
 from lending_experiment.environments.rewards import LendingReward_fair
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
@@ -312,7 +312,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                     cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
                 )
                 env_eval = DelayedImpactEnv(env_params)
-                env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair) # Note: episode length is the dafault EP_TIMESTEPS (2000), not 10000 used by Eric
+                env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair,ep_timesteps=EP_TIMESTEPS_EVAL) # Same as Eric: EP_TIMESTEPS_EVAL = 10000, larger than EP_TIMESTEPS=2000 during training
                 # evaluate and write to disk
                 eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)
                 eval_data['num_timesteps'] = self.num_timesteps

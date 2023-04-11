@@ -19,6 +19,7 @@ BUFFER_SIZE_TRAINING = 4096 # only for training; for evaluation, the buffer_size
 ########## Evaluation ##########
 EVAL_NUM_EPS = 3 # number of episodes for evaluation
 EVAL_INTERVAL = 5 # number of rollout per evaluation (1 rollout is env.ep_timesteps steps during evaluation)
+EP_TIMESTEPS_EVAL = 10000 # Number of steps per episode. Eric's paper use EP_TIMESTEPS_EVAL = 10000 for evaluation and EP_TIMESTEPS = 2000 for traning
 
 
 ########## Env Parameters ##########
