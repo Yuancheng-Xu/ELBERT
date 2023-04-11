@@ -1,4 +1,5 @@
 import time
+from datetime import timedelta
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
@@ -21,12 +22,15 @@ from agents.ppo.sb3.utils_fair import evaluate_fair
 
 # create env for evaluation 
 from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
-    CLUSTER_SHIFT_INCREMENT
+    CLUSTER_SHIFT_INCREMENT,EVAL_NUM_EPS
 from lending_experiment.environments.lending import DelayedImpactEnv
 from lending_experiment.environments.rewards import LendingReward_fair
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 
+# for writing evaluation results to disk
+import pandas as pd 
+import os
 
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
@@ -88,6 +92,9 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+
+        eval_write_path: str = None,
+        eval_interval: int = None, # evaluate every eval_interval times of rollout
     ):
         
         super(OnPolicyAlgorithm_fair, self).__init__(
@@ -114,6 +121,9 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
+        # for eval
+        self.eval_write_path = eval_write_path
+        self.eval_interval = eval_interval
 
         if _init_setup_model:
             self._setup_model()
@@ -173,6 +183,10 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
 
         n_steps = 0
         rollout_buffer.reset()
+
+        # reset env (in previous version, env is not reset)
+        self._last_obs = env.reset()
+
         # Sample new weights for the state dependent exploration
         if self.use_sde:
             self.policy.reset_noise(env.num_envs)
@@ -281,9 +295,41 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
 
         callback.on_training_start(locals(), globals())
 
+        eval_time_flag = None
+
         while self.num_timesteps < total_timesteps:
 
+            ### evaluation
+            if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
+                self.policy.set_training_mode(False)
+                # new env for eval
+                env_params = DelayedImpactParams(
+                    applicant_distribution=two_group_credit_clusters(
+                        cluster_probabilities=CLUSTER_PROBABILITIES,
+                        group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
+                    bank_starting_cash=BANK_STARTING_CASH,
+                    interest_rate=INTEREST_RATE,
+                    cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
+                )
+                env_eval = DelayedImpactEnv(env_params)
+                env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair) # Note: episode length is the dafault EP_TIMESTEPS (2000), not 10000 used by Eric
+                # evaluate and write to disk
+                eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)
+                eval_data['num_timesteps'] = self.num_timesteps
+                eval_data['time_elapsed'] = str(timedelta(seconds=time.time() - eval_time_flag)) if eval_time_flag is not None else str(0)
+                df_eval = pd.DataFrame([eval_data], columns=eval_data.keys())
+                df_eval.to_csv(self.eval_write_path , mode='a', header=not os.path.exists(self.eval_write_path))            
+            
+                eval_time_flag = time.time()
+
+
+
             continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
+
+            # check if one buffer contains exactly an interger number of episodes
+            num_eps_ = (self.rollout_buffer.episode_starts==1).sum()
+            for i in range(num_eps_):
+                assert self.rollout_buffer.episode_starts[i * self.env.envs[0].env.ep_timesteps] == 1 
 
             if continue_training is False:
                 break
@@ -310,26 +356,6 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                 self.logger.dump(step=self.num_timesteps)
 
             self.train()
-
-            ### evaluation
-            # TODO: set eval_interval
-            # TODO: set write_path for csv file
-            self.policy.set_training_mode(False)
-            # new env for eval
-            env_params = DelayedImpactParams(
-                applicant_distribution=two_group_credit_clusters(
-                    cluster_probabilities=CLUSTER_PROBABILITIES,
-                    group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
-                bank_starting_cash=BANK_STARTING_CASH,
-                interest_rate=INTEREST_RATE,
-                cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
-            )
-            env_eval = DelayedImpactEnv(env_params)
-            env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair) # Note: episode length is the dafault EP_TIMESTEPS (2000), not 10000 used by Eric
-            # evaluate
-            evaluate_fair(env_eval, self.policy, num_eps=10, write_path=None)
-            
-
 
         callback.on_training_end()
 

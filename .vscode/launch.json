@@ -14,8 +14,6 @@
 
                   "args": [
                         "--algorithm", "ppo",
-                        "--train",
-                        "--show_train_progress"
                   ]
             }
       ]

@@ -255,7 +255,7 @@ class RolloutBuffer_fair(BaseBuffer):
 
         # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
         for i in range(5):
-            self.returns[i] = self.advantages[i] + self.values[i]
+            self.returns[i] = self.advantages[i] + self.values[i]        
 
     def add(
         self,

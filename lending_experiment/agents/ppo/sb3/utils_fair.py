@@ -104,7 +104,7 @@ class Monitor_fair(Monitor):
         return self.episode_returns
  
 
-def evaluate_fair(env, agent, num_eps, write_path):
+def evaluate_fair(env, agent, num_eps):
     '''
     env: should be the one with five rewards
     num_eps: number of episodes
@@ -133,20 +133,20 @@ def evaluate_fair(env, agent, num_eps, write_path):
         'r_B': np.zeros((num_eps, num_timesteps, NUM_GROUPS)), 
 
         # old (can be removed later)
-        'tot_loans': np.zeros((num_eps, NUM_GROUPS)),  # The number of loans per group per episode
-        'tot_tp': np.zeros((num_eps, NUM_GROUPS)),  # The number of true positives, or no default given loan accepted, per group per episode
-        'tot_fp': np.zeros((num_eps, NUM_GROUPS)),  # The number of false positives, or default given loan accepted, per group per episode
-        'tot_tn': np.zeros((num_eps, NUM_GROUPS)),  # The number of true negatives, or default given loan rejected, per group per episode
-        'tot_fn': np.zeros((num_eps, NUM_GROUPS)),  # The number of false negatives, or no default given loan rejected, per group per episode
-        'tot_tpr': np.zeros((num_eps, NUM_GROUPS)),  # The TPR per group per episode
-        'tot_rews_over_time': np.zeros((num_eps, num_timesteps)),  # The reward per timestep per episode
-        'tot_loans_over_time': np.zeros((num_eps, num_timesteps,  NUM_GROUPS)),  # The number of loans per group per timestep per episode
-        'tot_bank_cash_over_time': np.zeros((num_eps, num_timesteps)),  # The amount of bank cash per timestep per episode
-        'tot_tp_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TP per group per timestep per episode
-        'tot_fp_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The FP per group per timestep per episode
-        'tot_tn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TN per group per timestep per episode
-        'tot_fn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The FN per group per timestep per episode
-        'tot_tpr_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TPR per group per timestep per episode
+        # 'tot_loans': np.zeros((num_eps, NUM_GROUPS)),  # The number of loans per group per episode
+        # 'tot_tp': np.zeros((num_eps, NUM_GROUPS)),  # The number of true positives, or no default given loan accepted, per group per episode
+        # 'tot_fp': np.zeros((num_eps, NUM_GROUPS)),  # The number of false positives, or default given loan accepted, per group per episode
+        # 'tot_tn': np.zeros((num_eps, NUM_GROUPS)),  # The number of true negatives, or default given loan rejected, per group per episode
+        # 'tot_fn': np.zeros((num_eps, NUM_GROUPS)),  # The number of false negatives, or no default given loan rejected, per group per episode
+        # 'tot_tpr': np.zeros((num_eps, NUM_GROUPS)),  # The TPR per group per episode
+        # 'tot_rews_over_time': np.zeros((num_eps, num_timesteps)),  # The reward per timestep per episode
+        # 'tot_loans_over_time': np.zeros((num_eps, num_timesteps,  NUM_GROUPS)),  # The number of loans per group per timestep per episode
+        # 'tot_bank_cash_over_time': np.zeros((num_eps, num_timesteps)),  # The amount of bank cash per timestep per episode
+        # 'tot_tp_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TP per group per timestep per episode
+        # 'tot_fp_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The FP per group per timestep per episode
+        # 'tot_tn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TN per group per timestep per episode
+        # 'tot_fn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The FN per group per timestep per episode
+        # 'tot_tpr_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TPR per group per timestep per episode
     }
 
     for ep in range(num_eps):
@@ -156,7 +156,7 @@ def evaluate_fair(env, agent, num_eps, write_path):
 
         obs = env.reset()
         done = False
-        print(f'Evaluation:  Episode {ep}:')
+        # print(f'Evaluation:  Episode {ep}:')
         # for t in tqdm.trange(num_timesteps):
         for t in range(num_timesteps):
             action = agent.predict(obs)[0]
@@ -230,7 +230,13 @@ def evaluate_fair(env, agent, num_eps, write_path):
     # print('B',B)
     eval_data['tpr_0'] = U[0]/B[0]
     eval_data['tpr_1'] = U[1]/B[1]
+    eval_data['bias'] = eval_data['tpr_0'] - eval_data['tpr_1']
     eval_data['cash'] = eval_data['cash_over_time'][:,-1].mean()
+
+    # delete helper variables
+    eval_data.pop('r_U')
+    eval_data.pop('r_B')
+    eval_data.pop('cash_over_time')
 
 
     #################################################### sanity check begins
@@ -239,11 +245,5 @@ def evaluate_fair(env, agent, num_eps, write_path):
     # print('Eric: TPR_1 with many episodes: ', eval_data['tot_tpr'][:,1])
     # print('Our TPR_0:{}, TPR_1:{}'.format(eval_data['tpr_0'],eval_data['tpr_1']))
     #################################################### sanity check ends
-
-    # write to csv
-
-    # Path(f'{eval_path}/{name}/').mkdir(parents=True, exist_ok=True)
-    # for key in eval_data.keys():
-    #     np.save(f'{eval_path}/{name}/{key}.npy', eval_data[key])
 
     return eval_data

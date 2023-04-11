@@ -15,6 +15,7 @@ from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 from lending_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 from lending_experiment.agents.ppo.sb3.on_policy_algorithm_fair import OnPolicyAlgorithm_fair
 
+from lending_experiment.config_fair import BUFFER_SIZE_TRAINING
 
 
 class PPO_fair(OnPolicyAlgorithm_fair):
@@ -75,7 +76,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             policy: Union[str, Type[ActorCriticPolicy_fair]],    
             env: Union[GymEnv, str],
             learning_rate: Union[float, Schedule] = 3e-4,
-            n_steps: int = 4000, # buffer size; original: 2048
+            n_steps: int = BUFFER_SIZE_TRAINING, # buffer size; original: 2048
             batch_size: int = 64,
             n_epochs: int = 10,
             gamma: float = 0.99,
@@ -98,6 +99,8 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             _init_setup_model: bool = True,
 
             bias_coef: float = 0.5,  # for mitigation
+            eval_write_path: str = None,
+            eval_interval: int = None, # evaluate every eval_interval times of rollout
     ):
 
         super(PPO_fair, self).__init__(
@@ -125,6 +128,9 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 spaces.MultiDiscrete,
                 spaces.MultiBinary,
             ),
+
+            eval_write_path = eval_write_path,
+            eval_interval= eval_interval,
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
@@ -277,10 +283,11 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 # Estimate for 4 reward values: Use the TD lambda return of the first state in each episode (buffer contain several episodes)
                 # Note: use the whole buffer (not minibatch); 
                 # since rollout_buffer.returns does not change during one call of train(), these estimate will be the same in every for loop
+                # Note: When using gae_lambda = 1 in the buffer, the following are Monte Carlo Estimate
                 value_U_0_estimate = (self.rollout_buffer.returns[1][self.rollout_buffer.episode_starts==1]).mean()       
                 value_B_0_estimate = (self.rollout_buffer.returns[2][self.rollout_buffer.episode_starts==1]).mean()    
                 value_U_1_estimate = (self.rollout_buffer.returns[3][self.rollout_buffer.episode_starts==1]).mean()    
-                value_B_1_estimate = (self.rollout_buffer.returns[4][self.rollout_buffer.episode_starts==1]).mean()    
+                value_B_1_estimate = (self.rollout_buffer.returns[4][self.rollout_buffer.episode_starts==1]).mean()  
 
                 # mitigation term (bias)
                 bias_estimate = (value_U_0_estimate/value_B_0_estimate)  - (value_U_1_estimate/value_B_1_estimate)

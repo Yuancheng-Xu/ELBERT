@@ -23,8 +23,8 @@ import sys
 sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
 from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
-    CLUSTER_SHIFT_INCREMENT, EP_TIMESTEPS, NUM_GROUPS, TRAIN_TIMESTEPS, SAVE_DIR, EXP_DIR, POLICY_KWARGS_fair, \
-        LEARNING_RATE, SAVE_FREQ, EVAL_MODEL_PATHS
+    CLUSTER_SHIFT_INCREMENT, TRAIN_TIMESTEPS, EXP_DIR, POLICY_KWARGS_fair, \
+        LEARNING_RATE, SAVE_FREQ, EVAL_INTERVAL
 from lending_experiment.environments.lending import DelayedImpactEnv
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 from lending_experiment.environments.rewards import LendingReward_fair
@@ -54,12 +54,14 @@ torch.cuda.empty_cache()
 
 
 
-def train(train_timesteps, env, bias_coef):
+def train(train_timesteps, env, bias_coef, exp_dir):
+
+    save_dir = f'{exp_dir}/models/'
 
     exp_exists = False
-    if os.path.isdir(SAVE_DIR):
+    if os.path.isdir(save_dir):
         exp_exists = True
-        if input(f'{SAVE_DIR} already exists; do you want to retrain / continue training? (y/n): ') != 'y':
+        if input(f'{save_dir} already exists; do you want to retrain / continue training? (y/n): ') != 'y':
             exit()
 
         print('Training from start...')
@@ -81,8 +83,9 @@ def train(train_timesteps, env, bias_coef):
         should_load = resp == 'y'
 
     if should_load:
+        raise ValueError('Not implemented yet')
         model_name = input(f'Specify the model you would like to load in. Do not include the .zip: ')
-        model = PPO_fair.load(EXP_DIR + "models/" + model_name, verbose=1, device=device)
+        model = PPO_fair.load(exp_dir + "models/" + model_name, verbose=1, device=device)
         model.set_env(env)
     else:        
         print('PPO_fair: bias_coef:{}'.format(bias_coef))
@@ -91,24 +94,26 @@ def train(train_timesteps, env, bias_coef):
                     verbose=1,
                     learning_rate=LEARNING_RATE,
                     device=device,
-                    bias_coef=bias_coef)
+                    bias_coef=bias_coef,
+                    eval_write_path = os.path.join(exp_dir,'eval.csv'),
+                    eval_interval = EVAL_INTERVAL)
 
-        shutil.rmtree(EXP_DIR, ignore_errors=True)
-        Path(SAVE_DIR).mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(exp_dir, ignore_errors=True)
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
 
-    checkpoint_callback = CheckpointCallback(save_freq=SAVE_FREQ, save_path=SAVE_DIR,
+    checkpoint_callback = CheckpointCallback(save_freq=SAVE_FREQ, save_path=save_dir,
                                              name_prefix='rl_model')
 
-    model.set_logger(configure(folder=EXP_DIR))
+    model.set_logger(configure(folder=exp_dir))
     model.learn(total_timesteps=train_timesteps, callback=checkpoint_callback)
-    model.save(SAVE_DIR + '/final_model')
+    model.save(save_dir + '/final_model')
 
     # Once we finish learning, plot the returns over time and save into the experiments directory
-    plot_rets(EXP_DIR)
+    plot_rets(exp_dir)
 
 
 
-# xyc: not finished
+# TODO: Have not modified this function yet. Maybe don't need to 
 def display_eval_results(eval_dir):
     tot_eval_data = {}
     agent_names = copy.deepcopy(next(os.walk(eval_dir))[1])
@@ -131,16 +136,24 @@ def display_eval_results(eval_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train', action='store_true')
-    parser.add_argument('--algorithm', type=str, default='ppo', choices=['ppo', 'cpo']) # later, change this to ppo_fair
-    parser.add_argument('--eval_path', dest='eval_path', type=str, default=None)
-    parser.add_argument('--display_eval_path', dest='display_eval_path', type=str, default=None)
-    parser.add_argument('--show_train_progress', action='store_true')
+    # essential
+    parser.add_argument('--bias_coef', type=float, default=1.0)
 
-    parser.add_argument('--bias_coef', type=float, default=0.5)
+    # evaluation
+    parser.add_argument('--exp_path', type=str, default='bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
+
+    # others
+    parser.add_argument('--train', action='store_false')
+    parser.add_argument('--algorithm', type=str, default='ppo', choices=['ppo']) # later, change this to ppo_fair
+    parser.add_argument('--display_eval_path', dest='display_eval_path', type=str, default=None)
+    parser.add_argument('--show_train_progress', action='store_false')
+
+    
     args = parser.parse_args()
 
     print('\n\n\n',args,'\n\n\n')
+    exp_dir  = os.path.join(EXP_DIR,args.exp_path) 
+    print('exp_dir:{}'.format(exp_dir))
 
     env_params = DelayedImpactParams(
         applicant_distribution=two_group_credit_clusters(
@@ -153,53 +166,17 @@ def main():
     env = DelayedImpactEnv(env_params)
 
     if args.train:
-        train(train_timesteps=TRAIN_TIMESTEPS, env=env, bias_coef = args.bias_coef)
-        plot_rets(exp_path=EXP_DIR, save_png=True)
+        
+        train(train_timesteps=TRAIN_TIMESTEPS, env=env, bias_coef = args.bias_coef, exp_dir=exp_dir)
+        plot_rets(exp_path=exp_dir, save_png=True)
 
     if args.show_train_progress:
-        plot_rets(exp_path=EXP_DIR, save_png=False)
+        plot_rets(exp_path=exp_dir, save_png=False)
 
     if args.display_eval_path is not None:
         display_eval_results(eval_dir=args.display_eval_path)
 
-    if args.eval_path is not None:
-
-        assert(args.eval_path is not None)
-        p = Path(args.eval_path)
-        if p.exists():
-            resp = input(f'{args.eval_path} already exists; do you want to override it? (y/n): ')
-            if resp != 'y':
-                exit('Exiting.')
-
-        # Initialize eval directory to store eval information
-        shutil.rmtree(args.eval_path, ignore_errors=True)
-        Path(args.eval_path).mkdir(parents=True, exist_ok=True)
-
-        # Get random seeds
-        eval_eps = 10
-        eval_timesteps = 10000
-        raise ValueError('Why eval_timesteps = 10000???')
-        seeds = [random.randint(0, 10000) for _ in range(eval_eps)]
-
-        with open(args.eval_path + '/seeds.txt', 'w') as f:
-            f.write(str(seeds))
-
-        # First, evaluate PPO human_designed_policies
-        for name, model_path in EVAL_MODEL_PATHS.items():
-            env = DelayedImpactEnv(env_params)
-            agent = PPO.load(model_path, verbose=1)
-            evaluate(env=PPOEnvWrapper_fair(env=env, reward_fn=LendingReward, ep_timesteps=eval_timesteps), # here number of steps per episode is overidden as eval_timesteps.
-                     agent=agent,
-                     num_eps=eval_eps,
-                     num_timesteps=eval_timesteps,
-                     name=name,
-                     seeds=seeds,
-                     eval_path=args.eval_path)
-
         
-
-        
-
 
 if __name__ == '__main__':
     main()
