@@ -11,14 +11,14 @@ LEARNING_RATE = 0.00001
 # POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
 #                      net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])]) # xyc note: this is older sb3 used by Eric, which allowed shared layers
 POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,
-                     net_arch = dict(vf=[256, 128], pi=[256, 128])) # new sb3: shared layers is not defined net_arch here. 
+                     net_arch = dict(vf=[256, 128], pi=[256, 128])) # new sb3: shared layers is not defined in net_arch here. 
 SAVE_FREQ = 100000000 # Don't save models.  original: 10000
 
 BUFFER_SIZE_TRAINING = 4096 # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
 
 ########## Evaluation ##########
 EVAL_NUM_EPS = 3 # number of episodes for evaluation
-EVAL_INTERVAL = 5 # number of rollout per evaluation (1 rollout is env.ep_timesteps steps during evaluation)
+EVAL_INTERVAL = 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 10000 # Number of steps per episode. Eric's paper use EP_TIMESTEPS_EVAL = 10000 for evaluation and EP_TIMESTEPS = 2000 for traning
 
 

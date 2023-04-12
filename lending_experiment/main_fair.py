@@ -17,7 +17,6 @@ from stable_baselines3.common.logger import configure
 # from stable_baselines3.common.monitor import Monitor # does not deal with multiple rewards
 # from stable_baselines3.common.vec_env import DummyVecEnv # does not deal with multiple rewards
 
-# from yaml import full_load
 
 import sys
 sys.path.insert(1, '/cmlscratch/xic/FairRL/')
@@ -46,6 +45,10 @@ from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fai
 from lending_experiment.agents.ppo.sb3.ppo_fair import PPO_fair
 from lending_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 from lending_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monitor_fair
+# plot evaluation
+from lending_experiment.plot import plot_cash_bias
+
+
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -168,6 +171,10 @@ def main():
     if args.train:
         
         train(train_timesteps=TRAIN_TIMESTEPS, env=env, bias_coef = args.bias_coef, exp_dir=exp_dir)
+
+        # plot evaluation
+        plot_cash_bias(args.exp_path)
+
         plot_rets(exp_path=exp_dir, save_png=True)
 
     if args.show_train_progress:
