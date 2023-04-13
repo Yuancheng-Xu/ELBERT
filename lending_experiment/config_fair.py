@@ -7,7 +7,7 @@ EXP_DIR = './experiments/fair_ppo/' # all experimental results will be under thi
 
 ########## Training Parameters ##########
 TRAIN_TIMESTEPS = 2_000_000  # Total train env.steps
-LEARNING_RATE = 0.00001
+# LEARNING_RATE = 0.00001
 # POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
 #                      net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])]) # xyc note: this is older sb3 used by Eric, which allowed shared layers
 POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,

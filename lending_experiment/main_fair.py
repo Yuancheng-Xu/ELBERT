@@ -23,7 +23,8 @@ sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
 from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
     CLUSTER_SHIFT_INCREMENT, TRAIN_TIMESTEPS, EXP_DIR, POLICY_KWARGS_fair, \
-        LEARNING_RATE, SAVE_FREQ, EVAL_INTERVAL
+    SAVE_FREQ, EVAL_INTERVAL \
+    # LEARNING_RATE
 from lending_experiment.environments.lending import DelayedImpactEnv
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 from lending_experiment.environments.rewards import LendingReward_fair
@@ -57,7 +58,7 @@ torch.cuda.empty_cache()
 
 
 
-def train(train_timesteps, env, bias_coef, exp_dir):
+def train(train_timesteps, env, bias_coef, lr, exp_dir):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -95,7 +96,7 @@ def train(train_timesteps, env, bias_coef, exp_dir):
         model = PPO_fair(ActorCriticPolicy_fair, env,
                     policy_kwargs=POLICY_KWARGS_fair,
                     verbose=1,
-                    learning_rate=LEARNING_RATE,
+                    learning_rate = lr,
                     device=device,
                     bias_coef=bias_coef,
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
@@ -141,9 +142,10 @@ def main():
     parser = argparse.ArgumentParser()
     # essential
     parser.add_argument('--bias_coef', type=float, default=1.0)
+    parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
 
     # evaluation
-    parser.add_argument('--exp_path', type=str, default='bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
+    parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
 
     # others
     parser.add_argument('--train', action='store_false')
@@ -170,7 +172,7 @@ def main():
 
     if args.train:
         
-        train(train_timesteps=TRAIN_TIMESTEPS, env=env, bias_coef = args.bias_coef, exp_dir=exp_dir)
+        train(train_timesteps=TRAIN_TIMESTEPS, env=env, bias_coef = args.bias_coef, lr=args.lr, exp_dir=exp_dir)
 
         # plot evaluation
         plot_cash_bias(args.exp_path)
