@@ -21,35 +21,29 @@ from stable_baselines3.common.logger import configure
 import sys
 sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
-from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
-    CLUSTER_SHIFT_INCREMENT, EXP_DIR, POLICY_KWARGS_fair, \
-    SAVE_FREQ, EVAL_INTERVAL \
+from attention_allocation_experiment.config_fair import N_LOCATIONS, INCIDENT_RATES, N_ATTENTION_UNITS, DYNAMIC_RATE, \
+    EXP_DIR, POLICY_KWARGS_fair, SAVE_FREQ, EVAL_INTERVAL \
     # TRAIN_TIMESTEPS, LEARNING_RATE
-from lending_experiment.environments.lending import DelayedImpactEnv
-from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
-from lending_experiment.environments.rewards import LendingReward_fair
+from environments.attention_allocation import LocationAllocationEnv, Params
+from environments.rewards import AttentionAllocationReward_fair
 
-from lending_experiment.graphing.plot_bank_cash_over_time import plot_bank_cash_over_time
-# from lending_experiment.graphing.plot_confusion_matrix_over_time import plot_confusion_matrix_over_time
-# from lending_experiment.graphing.plot_fn_over_time import plot_fn_over_time
-# from lending_experiment.graphing.plot_fp_over_time import plot_fp_over_time
-from lending_experiment.graphing.plot_loans_over_time import plot_loans_over_time
-from lending_experiment.graphing.plot_rets import plot_rets
-from lending_experiment.graphing.plot_rews_over_time import plot_rews_over_time
-# from lending_experiment.graphing.plot_tn_over_time import plot_tn_over_time
-# from lending_experiment.graphing.plot_tp_over_time import plot_tp_over_time
-from lending_experiment.graphing.plot_tpr_gap_over_time import plot_tpr_gap_over_time
-from lending_experiment.graphing.plot_tpr_over_time import plot_tpr_over_time
+from graphing.plot_att_all_over_time_across_agents import plot_att_all_over_time_across_agents
+from graphing.plot_deltas_over_time_across_agents import plot_deltas_over_time_across_agents
+from graphing.plot_incidents_missed_over_time_across_agents import plot_incidents_missed_over_time_across_agents
+from graphing.plot_incidents_seen_over_time_across_agents import plot_incidents_seen_over_time_across_agents
+# from graphing.plot_rews import plot_rews
+from graphing.plot_rew_over_time_across_agents import plot_rew_over_time_across_agents
+from graphing.plot_rew_terms_over_time_across_agents import plot_rew_terms_over_time_across_agents
+from graphing.plot_true_rates_over_time_across_agents import plot_true_rates_over_time_across_agents
 
 # new multiple reward version: 
-from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
-from lending_experiment.agents.ppo.sb3.ppo_fair import PPO_fair
-from lending_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
-from lending_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monitor_fair
+from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
+from attention_allocation_experiment.agents.ppo.sb3.ppo_fair import PPO_fair
+from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
+from attention_allocation_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monitor_fair
+
 # plot evaluation
-from lending_experiment.plot import plot_cash_bias
-
-
+from attention_allocation_experiment.plot import plot_return_bias
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -73,7 +67,7 @@ def train(train_timesteps, env, bias_coef, lr, exp_dir):
     print('env_params: ', env.state.params)
 
 
-    env = PPOEnvWrapper_fair(env=env, reward_fn=LendingReward_fair)
+    env = PPOEnvWrapper_fair(env=env, reward_fn=AttentionAllocationReward_fair)
     env = Monitor_fair(env)
     env = DummyVecEnv_fair([lambda: env]) 
 
@@ -112,10 +106,6 @@ def train(train_timesteps, env, bias_coef, lr, exp_dir):
     model.learn(total_timesteps=train_timesteps, callback=checkpoint_callback)
     model.save(save_dir + '/final_model')
 
-    # Once we finish learning, plot the returns over time and save into the experiments directory
-    plot_rets(exp_dir)
-
-
 
 # TODO: Have not modified this function yet. Maybe don't need to 
 def display_eval_results(eval_dir):
@@ -127,13 +117,14 @@ def display_eval_results(eval_dir):
             key = key.split('.npy')[0]
             tot_eval_data[agent_name][key] = np.load(f'{eval_dir}/{agent_name}/{key}.npy', allow_pickle=True)
 
-
-    # Plot all agent evaluations
-    plot_rews_over_time(tot_eval_data)
-    plot_loans_over_time(tot_eval_data)
-    plot_bank_cash_over_time(tot_eval_data)
-    plot_tpr_over_time(tot_eval_data)
-    plot_tpr_gap_over_time(tot_eval_data)
+    # Plot all human_designed_policies evaluations
+    plot_rew_over_time_across_agents(tot_eval_data)
+    plot_incidents_seen_over_time_across_agents(tot_eval_data)
+    plot_incidents_missed_over_time_across_agents(tot_eval_data)
+    plot_att_all_over_time_across_agents(tot_eval_data)
+    plot_true_rates_over_time_across_agents(tot_eval_data)
+    plot_deltas_over_time_across_agents(tot_eval_data)
+    plot_rew_terms_over_time_across_agents(tot_eval_data)
 
 
 
@@ -143,7 +134,7 @@ def main():
     # essential
     parser.add_argument('--bias_coef', type=float, default=1.0)
     parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
-    parser.add_argument('--train_timesteps', type=int, default=5e6) # before: 2e6
+    parser.add_argument('--train_timesteps', type=int, default=5e6) 
 
     # evaluation
     parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
@@ -161,27 +152,24 @@ def main():
     exp_dir  = os.path.join(EXP_DIR,args.exp_path) 
     print('exp_dir:{}'.format(exp_dir))
 
-    env_params = DelayedImpactParams(
-        applicant_distribution=two_group_credit_clusters(
-            cluster_probabilities=CLUSTER_PROBABILITIES,
-            group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
-        bank_starting_cash=BANK_STARTING_CASH,
-        interest_rate=INTEREST_RATE,
-        cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
-    )
-    env = DelayedImpactEnv(env_params)
+    env_params = Params(
+        n_locations=N_LOCATIONS,
+        prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
+        incident_rates=INCIDENT_RATES,
+        n_attention_units=N_ATTENTION_UNITS,
+        miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+        extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+        dynamic_rate=DYNAMIC_RATE)
+    env = LocationAllocationEnv(params=env_params)
 
     if args.train:
         
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, lr=args.lr, exp_dir=exp_dir)
 
         # plot evaluation
-        plot_cash_bias(args.exp_path)
+        plot_return_bias(args.exp_path)
 
-        plot_rets(exp_path=exp_dir, save_png=True)
 
-    if args.show_train_progress:
-        plot_rets(exp_path=exp_dir, save_png=False)
 
     if args.display_eval_path is not None:
         display_eval_results(eval_dir=args.display_eval_path)

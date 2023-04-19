@@ -20,6 +20,15 @@ MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.Ba
 # and ouputs a scalar (e.g. learning rate, clip range, ...)
 Schedule = Callable[[float], float]
 
+class RolloutBufferSamples_fair(NamedTuple):
+    observations: th.Tensor
+    actions: th.Tensor
+    old_values: List[th.Tensor]
+    old_log_prob: th.Tensor
+    advantages: List[th.Tensor]
+    returns: List[th.Tensor]
+
+# below are from Eric
 
 class RolloutBufferSamples(NamedTuple):
     observations: th.Tensor
