@@ -5,7 +5,7 @@ from __future__ import print_function
 import argparse
 import copy
 import os
-import random
+# import random
 import shutil
 from pathlib import Path
 
@@ -46,13 +46,14 @@ from attention_allocation_experiment.agents.ppo.sb3.utils_fair import DummyVecEn
 from attention_allocation_experiment.plot import plot_return_bias
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda")
 print('Using device: ', device)
 torch.cuda.empty_cache()
 
 
 
-def train(train_timesteps, env, bias_coef, lr, exp_dir):
+def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -92,6 +93,7 @@ def train(train_timesteps, env, bias_coef, lr, exp_dir):
                     verbose=1,
                     learning_rate = lr,
                     device=device,
+                    beta_smooth = beta_smooth,
                     bias_coef=bias_coef,
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
                     eval_interval = EVAL_INTERVAL)
@@ -133,9 +135,9 @@ def main():
     parser = argparse.ArgumentParser()
     # essential
     parser.add_argument('--bias_coef', type=float, default=1.0)
+    parser.add_argument('--beta_smooth', type=float, default=5.0)
     parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
     parser.add_argument('--train_timesteps', type=int, default=5e6) 
-
     # evaluation
     parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
 
@@ -164,7 +166,8 @@ def main():
 
     if args.train:
         
-        train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, lr=args.lr, exp_dir=exp_dir)
+        train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
+              lr=args.lr, exp_dir=exp_dir)
 
         # plot evaluation
         plot_return_bias(args.exp_path)

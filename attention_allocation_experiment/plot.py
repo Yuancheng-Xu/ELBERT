@@ -5,11 +5,13 @@ sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+# for smoothing
+from scipy.ndimage.filters import gaussian_filter1d
 
 from attention_allocation_experiment.config_fair import EXP_DIR
 
 
-def plot_return_bias(exp_path):
+def plot_return_bias(exp_path, save=True, smooth=-1):
     
     # read data
     data_pth  = os.path.join(EXP_DIR,exp_path,'eval.csv') 
@@ -18,10 +20,16 @@ def plot_return_bias(exp_path):
     # to numpy
     num_samples = data['num_timesteps'].to_numpy()
 
-    return_arr = data['cash'].to_numpy() # this is the reward averaged across timesteps and episodes, as in attention_allocation_experiment.agents.ppo.sb3.utils_fair
+    return_arr = data['return'].to_numpy() # this is the reward averaged across timesteps and episodes, as in attention_allocation_experiment.agents.ppo.sb3.utils_fair
     benefit_max = data['benefit_max'].to_numpy()
     benefit_min = data['benefit_min'].to_numpy()
     bias = data['bias'].to_numpy()
+    
+    if smooth > 0:
+        return_arr = gaussian_filter1d(return_arr, sigma=smooth)
+        benefit_max = gaussian_filter1d(benefit_max, sigma=smooth)
+        benefit_min = gaussian_filter1d(benefit_min, sigma=smooth)
+        bias = gaussian_filter1d(bias, sigma=smooth)
     
     # plot
     fig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (8,8), sharex=True)
@@ -30,12 +38,13 @@ def plot_return_bias(exp_path):
     ax1.plot(num_samples,return_arr)
     ax1.set_ylabel('return')
     ax1.set_title('average return / episode_len')
+    ax1.grid()
     # TPR
     ax2.plot(num_samples,benefit_max,label='benefit_max')
     ax2.plot(num_samples,benefit_min,label='benefit_min')
     ax2.legend()
     ax2.set_ylabel('benefit')
-    ax2.set_title('benefit_min max and min')
+    ax2.set_title('benefit max and min')
     # bias
     ax3.plot(num_samples,bias)
     ax3.set_xlabel('Samples')
@@ -43,6 +52,24 @@ def plot_return_bias(exp_path):
     ax3.axhline(y=0, color='r', linestyle='-')
     ax3.set_title('Bias')
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
-    # fig.show()
-    fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+    ax3.grid()
+    if save:
+        fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+    else:
+        fig.show()
 
+
+# +
+# exp_path = 'betaSmooth_1/lr_1e-6_samples_5e6_zeta0_0/b_0'
+# plot_return_bias(exp_path,save=False)
+
+# +
+# smooth_val = 3
+# exp_path_base = 'betaSmooth_1/lr_1e-6_samples_5e6_zeta0_0/b_'
+# beta_list = [0,10,50,100,200,500,1000,2000]
+
+# exp_path_base = 'betaSmooth_5/lr_1e-6_samples_5e6_zeta0_0_attUnit_6/b_'
+# beta_list = [0,20, 50,100,200,500,1000,2000]
+
+# for beta in beta_list:
+#     plot_return_bias(exp_path_base + str(beta),save=False, smooth = smooth_val)

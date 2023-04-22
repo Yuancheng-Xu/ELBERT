@@ -13,21 +13,21 @@ POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,
 SAVE_FREQ = 1e8  # save frequency in timesteps: don't save model for now
 BUFFER_SIZE_TRAINING = 4096 # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
 
-BETA_SMOOTH = 5 # for computing soft_bias
+# BETA_SMOOTH = 5 # for computing soft_bias
 
 ########## Evaluation ##########
 EVAL_NUM_EPS = 3 # number of episodes for evaluation
 EVAL_INTERVAL = 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 1024 # Number of steps per episode. 
 ########## Eval Parameters ##########
-EVAL_ZETA_0 = 1
+EVAL_ZETA_0 = 0    # original: 1  xyc
 EVAL_ZETA_1 = 0.25
 
 
 
 ########## Env Parameters ##########
 N_LOCATIONS = 5
-N_ATTENTION_UNITS = 6
+N_ATTENTION_UNITS = 6 # original: 6  xyc
 EP_TIMESTEPS = 1024
 INCIDENT_RATES = [8, 6, 4, 3, 1.5]
 DYNAMIC_RATE = 0.1
@@ -35,8 +35,8 @@ DYNAMIC_RATE = 0.1
 OBS_HIST_LEN = 8
 
 # Weights for incidents seen, missed incidents, and delta in reward for the attention allocation environment
-ZETA_0 = 1
+ZETA_0 = 0    # original: 1  xyc
 ZETA_1 = 0.25
-ZETA_2 = 0  # 0 means no delta penalty in the reward (should only be non-zero for R-PPO)
+# ZETA_2 = 0  # 0 means no delta penalty in the reward (should only be non-zero for R-PPO)
 
 

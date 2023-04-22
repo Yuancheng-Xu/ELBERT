@@ -15,8 +15,7 @@ from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 from attention_allocation_experiment.agents.ppo.sb3.on_policy_algorithm_fair import OnPolicyAlgorithm_fair
 
-from attention_allocation_experiment.config_fair import BUFFER_SIZE_TRAINING,BETA_SMOOTH
-
+from attention_allocation_experiment.config_fair import BUFFER_SIZE_TRAINING
 
 class PPO_fair(OnPolicyAlgorithm_fair):
     """
@@ -98,7 +97,10 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
 
+            
             bias_coef: float = None,  # for mitigation
+            beta_smooth: float = None, # for computing the soft bias
+            
             eval_write_path: str = None,
             eval_interval: int = None, # evaluate every eval_interval times of rollout
     ):
@@ -166,6 +168,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.target_kl = target_kl
 
         self.bias_coef = bias_coef
+        self.beta_smooth = beta_smooth
 
         if _init_setup_model:
             self._setup_model()
@@ -315,7 +318,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 value_B_estimate = torch.from_numpy(value_B_estimate)
                 ratio_fairness = value_U_estimate / value_B_estimate
 
-                soft_bias, soft_bias_grad = soft_bias_value_and_gradient(copy.deepcopy(ratio_fairness),BETA_SMOOTH)
+                soft_bias, soft_bias_grad = soft_bias_value_and_gradient(copy.deepcopy(ratio_fairness),self.beta_smooth)
 
                 # estimate the gradient of R_U / R_B
                 policy_loss_U = torch.zeros(self.num_groups)   
@@ -440,6 +443,7 @@ def soft_bias_value_and_gradient(x,beta):
     soft_bias = smooth_max(x,beta) - smooth_max(x,-beta)
     compute the value of soft_bias and the gradient of soft_bias w.r.t. the input x
     '''
+    assert beta is not None, 'beta for computing the soft bias is None. Please specify it'
     assert isinstance(x, torch.Tensor), 'the type of input should be torch.Tensor'
     num_groups = x.size(0)
     assert num_groups > 2, 'When there are only two groups, do not need to use soft_bias!'
