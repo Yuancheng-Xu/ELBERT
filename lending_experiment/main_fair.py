@@ -25,7 +25,10 @@ from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, 
     CLUSTER_SHIFT_INCREMENT, EXP_DIR, POLICY_KWARGS_fair, \
     SAVE_FREQ, EVAL_INTERVAL \
     # TRAIN_TIMESTEPS, LEARNING_RATE
-from lending_experiment.environments.lending import DelayedImpactEnv
+
+# Chenghao: Import GeneralDelayedImpactEnv for the new environment
+from lending_experiment.environments.lending import DelayedImpactEnv, GeneralDelayedImpactEnv
+
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 from lending_experiment.environments.rewards import LendingReward_fair
 
@@ -169,7 +172,10 @@ def main():
         interest_rate=INTEREST_RATE,
         cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
     )
+
     env = DelayedImpactEnv(env_params)
+    # Chenghao: Comment the previous line and use the following line for the new env
+    # env = GeneralDelayedImpactEnv(env_params)
 
     if args.train:
         

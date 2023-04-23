@@ -22,12 +22,45 @@ DELAYED_IMPACT_CLUSTER_PROBS = (
     (0.0, 0.1, 0.1, 0.2, 0.3, 0.3, 0.0),
     (0.1, 0.1, 0.2, 0.3, 0.3, 0.0, 0.0),
 )
+
+# Chenghao: New parameters to replace DELAYED_IMPACT_CLUSTER_PROBS
+DELAYED_IMPACT_CLUSTER_PROBS_1 = (
+    (0.05, 0.05, 0.0, 0.2, 0.1, 0.3, 0.3),
+    (0.0, 0.0, 0.3, 0.3, 0.3, 0.05, 0.05),
+)
+
+ALTER_RATE = [0.3, 0.1]
+
+TRANSITION_DYNAMICS = [
+    [
+        [0.2, 0.7, 0.1, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.2, 0.7, 0.1, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.2, 0.7, 0.1, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.2, 0.7, 0.1, 0.0],
+        [0.0, 0.5, 0.0, 0.0, 0.2, 0.2, 0.1],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.8],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+    ],
+    [
+        [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
+        [0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.2, 0.7, 0.1, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.2, 0.7, 0.1, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.2, 0.7, 0.1, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.2, 0.7, 0.1, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.2, 0.7, 0.1],
+    ],
+]
+
 NUM_GROUPS = 2
 GROUP_0_PROB = 0.5
 BANK_STARTING_CASH= 10000
 INTEREST_RATE = 1
 CLUSTER_SHIFT_INCREMENT= 0.01
+
+#Chenghao: this line may need to be changed for using new parameters
 CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS
+
 EP_TIMESTEPS = 2000 # done=True if rollout for more than ep_timesteps steps by PPO_wrapper; in lending env, done =True also when bank cash < one loan
 MAXIMIZE_REWARD = ThresholdPolicy.MAXIMIZE_REWARD
 EQUALIZE_OPPORTUNITY = ThresholdPolicy.EQUALIZE_OPPORTUNITY
