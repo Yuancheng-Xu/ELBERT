@@ -51,8 +51,8 @@ from lending_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monit
 # plot evaluation
 from lending_experiment.plot import plot_cash_bias
 
-# for Chenghao's env
-from lending_experiment.environments.lending import GeneralDelayedImpactEnv
+# Chenghao's env
+from lending_experiment.new_env import create_GeneralDelayedImpactEnv
 
 
 
@@ -147,7 +147,9 @@ def main():
     # essential
     parser.add_argument('--bias_coef', type=float, default=1.0)
     parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
-    parser.add_argument('--train_timesteps', type=int, default=5e6) # before: 2e6
+    parser.add_argument('--train_timesteps', type=int, default=5e6) 
+
+    parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
 
     # evaluation
     parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
@@ -165,25 +167,29 @@ def main():
     exp_dir  = os.path.join(EXP_DIR,args.exp_path) 
     print('exp_dir:{}'.format(exp_dir))
 
-    env_params = DelayedImpactParams(
-        applicant_distribution=two_group_credit_clusters(
-            cluster_probabilities=CLUSTER_PROBABILITIES,
-            group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
-        bank_starting_cash=BANK_STARTING_CASH,
-        interest_rate=INTEREST_RATE,
-        cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
-    )
+    if not args.modifedEnv:
+        print('Using the original env in Eric\'s code')
+        env_params = DelayedImpactParams(
+            applicant_distribution=two_group_credit_clusters(
+                cluster_probabilities=CLUSTER_PROBABILITIES,
+                group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
+            bank_starting_cash=BANK_STARTING_CASH,
+            interest_rate=INTEREST_RATE,
+            cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
+        )
 
-    env = DelayedImpactEnv(env_params)
-    # Chenghao: Comment the previous line and use the following line for the new env
-    # env = GeneralDelayedImpactEnv(env_params)
+        env = DelayedImpactEnv(env_params)
+    else:
+        print('main_fair.py: Using Chenghao\'s modified env')
+        env = create_GeneralDelayedImpactEnv()
+
 
     if args.train:
         
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, lr=args.lr, exp_dir=exp_dir)
 
         # plot evaluation
-        plot_cash_bias(args.exp_path)
+        plot_cash_bias(args.exp_path,smooth=2)
 
         plot_rets(exp_path=exp_dir, save_png=True)
 

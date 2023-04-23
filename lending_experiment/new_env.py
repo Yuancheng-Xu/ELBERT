@@ -4,16 +4,40 @@ New Lending Env with the following modification from Eric's code
   2. The transition dynamics allows "jumping" from non-contiguent states (for more 'long-term' effect)
 '''
 
-from lending_experiment.environments.lending import * 
-
 
 ############################ new env Parameters ############################
-from lending_experiment.config import ALTER_RATE, TRANSITION_DYNAMICS  
-
 # the following will eventually writes to config.py
+DELAYED_IMPACT_CLUSTER_PROBS_1 = (
+    (0.05, 0.05, 0.0, 0.2, 0.1, 0.3, 0.3),
+    (0.0, 0.0, 0.3, 0.3, 0.3, 0.05, 0.05),
+)
+
+ALTER_RATE = [0.3, 0.1]
+
+TRANSITION_DYNAMICS = [
+    [
+        [0.2, 0.7, 0.1, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.2, 0.7, 0.1, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.2, 0.7, 0.1, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.2, 0.7, 0.1, 0.0],
+        [0.0, 0.5, 0.0, 0.0, 0.2, 0.2, 0.1],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.8],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+    ],
+    [
+        [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
+        [0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.2, 0.7, 0.1, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.2, 0.7, 0.1, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.2, 0.7, 0.1, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.2, 0.7, 0.1, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.2, 0.7, 0.1],
+    ],
+]
 
 ############################ new env Starts ############################
 # the following will eventually writes to lending.py
+from lending_experiment.environments.lending import * 
 class _GeneralCreditShift(core.StateUpdater):
   '''
   Chenghao's code, with the following modification from the original CreditShift function
@@ -120,3 +144,26 @@ class GeneralDelayedImpactEnv(BaseLendingEnv):
         self.initial_params.applicant_distribution.dim, 1)
     self.observation_space = spaces.Dict(self.observable_state_vars)
 ############################ new env Ends ############################
+
+# the following should be eventually in main.py and evaluation 
+from lending_experiment.config_fair import  GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
+    CLUSTER_SHIFT_INCREMENT
+CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS_1 # chenghao's design; need to import it in config.py in put into main.py in the end
+from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
+env_params = DelayedImpactParams(
+        applicant_distribution=two_group_credit_clusters(
+            cluster_probabilities=CLUSTER_PROBABILITIES,
+            group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
+        bank_starting_cash=BANK_STARTING_CASH,
+        interest_rate=INTEREST_RATE,
+        cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
+    )
+
+def create_GeneralDelayedImpactEnv():
+  '''
+  Directly create the new version of the env, without any argument 
+  (all env parameters are hard-wired in the file)
+  '''
+
+  env = GeneralDelayedImpactEnv(env_params)
+  return env

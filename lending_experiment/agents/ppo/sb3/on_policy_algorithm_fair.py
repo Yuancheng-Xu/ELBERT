@@ -32,6 +32,9 @@ from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fai
 import pandas as pd 
 import os
 
+# Chenghao's env
+from lending_experiment.new_env import create_GeneralDelayedImpactEnv
+
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
     """
@@ -302,16 +305,23 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             ### evaluation
             if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
                 self.policy.set_training_mode(False)
-                # new env for eval
-                env_params = DelayedImpactParams(
-                    applicant_distribution=two_group_credit_clusters(
-                        cluster_probabilities=CLUSTER_PROBABILITIES,
-                        group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
-                    bank_starting_cash=BANK_STARTING_CASH,
-                    interest_rate=INTEREST_RATE,
-                    cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
-                )
-                env_eval = DelayedImpactEnv(env_params)
+                # create a new env for eval
+                if 'General' in str(type(self.env.envs[0].env.env)):
+                    # Chenghao's modifed env
+                    print('Evaluation: Using Chenghao\'s modified env')
+                    env_eval = create_GeneralDelayedImpactEnv()
+                else:
+                    print('Evaluation: Using Original Eric\'s modified env')
+                    env_params = DelayedImpactParams(
+                        applicant_distribution=two_group_credit_clusters(
+                            cluster_probabilities=CLUSTER_PROBABILITIES,
+                            group_likelihoods=[GROUP_0_PROB, 1 - GROUP_0_PROB]),
+                        bank_starting_cash=BANK_STARTING_CASH,
+                        interest_rate=INTEREST_RATE,
+                        cluster_shift_increment=CLUSTER_SHIFT_INCREMENT,
+                    )
+                    env_eval = DelayedImpactEnv(env_params)
+
                 env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=LendingReward_fair,ep_timesteps=EP_TIMESTEPS_EVAL) # Same as Eric: EP_TIMESTEPS_EVAL = 10000, larger than EP_TIMESTEPS=2000 during training
                 # evaluate and write to disk
                 eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)

@@ -5,11 +5,13 @@ sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+# for smoothing
+from scipy.ndimage.filters import gaussian_filter1d
 
 from lending_experiment.config_fair import EXP_DIR
 
 
-def plot_cash_bias(exp_path):
+def plot_cash_bias(exp_path, save=True, smooth=-1):
     
     # read data
     data_pth  = os.path.join(EXP_DIR,exp_path,'eval.csv') 
@@ -22,6 +24,13 @@ def plot_cash_bias(exp_path):
     tpr_0 = data['tpr_0'].to_numpy()
     tpr_1 = data['tpr_1'].to_numpy()
     bias = data['bias'].to_numpy()
+    bias = np.absolute(bias)
+
+    if smooth > 0:
+        cash = gaussian_filter1d(cash, sigma=smooth)
+        tpr_0 = gaussian_filter1d(tpr_0, sigma=smooth)
+        tpr_1 = gaussian_filter1d(tpr_1, sigma=smooth)
+        bias = gaussian_filter1d(bias, sigma=smooth)
     
     # plot
     fig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (8,8), sharex=True)
@@ -30,12 +39,14 @@ def plot_cash_bias(exp_path):
     ax1.plot(num_samples,cash)
     ax1.set_ylabel('Cash')
     ax1.set_title('Cash')
+    ax1.grid()
     # TPR
     ax2.plot(num_samples,tpr_0,label='Group 0')
     ax2.plot(num_samples,tpr_1,label='Group 1')
     ax2.legend()
     ax2.set_ylabel('TPR')
     ax2.set_title('TPR')
+    ax2.grid()
     # bias
     ax3.plot(num_samples,bias)
     ax3.set_xlabel('Samples')
@@ -43,8 +54,11 @@ def plot_cash_bias(exp_path):
     ax3.axhline(y=0, color='r', linestyle='-')
     ax3.set_title('Bias = TPR_0 - TPR_1')
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
-    # fig.show()
-    fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+    ax3.grid()
+    if save:
+        fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+    else:
+        fig.show()
 
 # +
 # # read data
