@@ -26,8 +26,7 @@ from lending_experiment.config_fair import CLUSTER_PROBABILITIES, GROUP_0_PROB, 
     SAVE_FREQ, EVAL_INTERVAL \
     # TRAIN_TIMESTEPS, LEARNING_RATE
 
-# Chenghao: Import GeneralDelayedImpactEnv for the new environment
-from lending_experiment.environments.lending import DelayedImpactEnv, GeneralDelayedImpactEnv
+from lending_experiment.environments.lending import DelayedImpactEnv
 
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 from lending_experiment.environments.rewards import LendingReward_fair
@@ -52,6 +51,8 @@ from lending_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monit
 # plot evaluation
 from lending_experiment.plot import plot_cash_bias
 
+# for Chenghao's env
+from lending_experiment.environments.lending import GeneralDelayedImpactEnv
 
 
 

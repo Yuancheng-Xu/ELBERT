@@ -170,7 +170,7 @@ def main():
               lr=args.lr, exp_dir=exp_dir)
 
         # plot evaluation
-        plot_return_bias(args.exp_path)
+        plot_return_bias(args.exp_path,smooth=2)
 
 
 
