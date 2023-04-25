@@ -3,7 +3,7 @@
 trap 'kill 0' SIGINT
 
 CUDA_VISIBLE_DEVICES=0 python main_fair.py --modifedEnv --bias_coef 0.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_0 &
-CUDA_VISIBLE_DEVICES=1 python main_fair.py --modifedEnv --bias_coef 10.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_10 &
+CUDA_VISIBLE_DEVICES=1 python main_fair.py --modifedEnv --bias_coef 2000.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_2000 &
 CUDA_VISIBLE_DEVICES=2 python main_fair.py --modifedEnv --bias_coef 20.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_20 &
 CUDA_VISIBLE_DEVICES=3 python main_fair.py --modifedEnv --bias_coef 50.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_50 &
 CUDA_VISIBLE_DEVICES=4 python main_fair.py --modifedEnv --bias_coef 100 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_100 &

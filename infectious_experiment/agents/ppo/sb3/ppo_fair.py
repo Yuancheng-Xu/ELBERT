@@ -12,10 +12,10 @@ import copy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 
-from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
-from attention_allocation_experiment.agents.ppo.sb3.on_policy_algorithm_fair import OnPolicyAlgorithm_fair
+from infectious_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
+from infectious_experiment.agents.ppo.sb3.on_policy_algorithm_fair import OnPolicyAlgorithm_fair
 
-from attention_allocation_experiment.config_fair import BUFFER_SIZE_TRAINING
+from infectious_experiment.config_fair import BUFFER_SIZE_TRAINING
 
 class PPO_fair(OnPolicyAlgorithm_fair):
     """
@@ -312,7 +312,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                      value_U_estimate[g] = (self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).mean()
                      value_B_estimate[g] = (self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).mean()
                 
-                assert len(self.rollout_buffer.returns) == 3 
+                assert len(self.rollout_buffer.returns) == 3 # xyc test
 
                 value_U_estimate = torch.from_numpy(value_U_estimate)
                 value_B_estimate = torch.from_numpy(value_B_estimate)
@@ -434,18 +434,30 @@ def smooth_max(x,beta):
     y = torch.logsumexp(y,dim=0)
     y = y / beta
     
+    # print('y now should be a number: ',y) # xyc test
+    # print('min:{}   max:{}'.format(x.min(),x.max())) # xyc test
     return y
 
 def soft_bias_value_and_gradient(x,beta):
     '''
     soft_bias = smooth_max(x,beta) - smooth_max(x,-beta)
     compute the value of soft_bias and the gradient of soft_bias w.r.t. the input x
+
+    If num_group == 2, use hard bias instead
     '''
     assert beta is not None, 'beta for computing the soft bias is None. Please specify it'
     assert isinstance(x, torch.Tensor), 'the type of input should be torch.Tensor'
     num_groups = x.size(0)
+    assert num_groups > 1, 'There should be at least two groups in the environment'
+    
+    if num_groups == 2:
+        bias = x.max() - x.min()
+        bias_grad = torch.ones(2)
+        bias_grad[torch.argmin(x)] = -1
+        return bias, bias_grad
+
+    # following: num_groups > 2
     assert num_groups > 2, 'When there are only two groups, do not need to use soft_bias!'
-    # TODO: xyc: implement the hard version; maybe just a very large beta?
 
     x.requires_grad = True
 

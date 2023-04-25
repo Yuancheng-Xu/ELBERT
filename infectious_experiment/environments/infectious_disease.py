@@ -48,7 +48,8 @@ class Params(core.Params):
   # A Markov transition matrix.  transition_matrix[i, j] gives the probability
   # of transitioning from i to j.  Note that transitions probabilities from
   # transition_matrix[healthy_index, :] are ignored because infection is
-  # governed by infection_probability.
+  # governed by infection_probability. 
+  # This is transition under natural progression without treatment
   transition_matrix = attr.ib()  # type: np.ndarray
 
   # Treatment transition matrix.  treatment_transtion_matrix[i, j] gives the
@@ -287,6 +288,8 @@ class InfectiousDiseaseEnv(core.FairnessEnv):
 
     # action is a list of patients indices to treat.
     for idx in action[:min(state.params.num_treatments, len(action))]:
+      # Typically, under treatment, the treatment_transition_matrix will specify that 
+      # S->R and R->R with probability 1, and I -> I with probability 1
       health_state = state.health_states[idx]
       transition_probs = state.params.treatment_transition_matrix[
           health_state, :]
@@ -298,8 +301,8 @@ class InfectiousDiseaseEnv(core.FairnessEnv):
     for index, health_state in enumerate(state.health_states):
       transition_probs = state.params.transition_matrix[health_state, :]
 
-      # Handle transitions from the healthy state as a special case.  See the
-      # class-level docstring for a description of this process.
+      # Handle transitions from the healthy state as a special case (not specified by the transition matrix).  
+      # See the class-level docstring for a description of this process.
       if health_state == state.params.healthy_index:
         num_infected_neighbors = sum(
             state.health_states[neighbor] == state.params.infectious_index
@@ -336,46 +339,46 @@ class InfectiousDiseaseEnv(core.FairnessEnv):
     self.initial_params.initial_health_state = initial_health_state
 
 
-@gin.configurable
-def build_si_model(
-    population_graph,
-    infection_probability,
-    num_treatments,
-    max_treatments=None,
-    treatment_transition_matrix=None,
-    initial_health_state=None,
-    initial_health_state_seed=100,
-    burn_in=0):
-  """Builds a Susceptible-Infected environment."""
+# @gin.configurable
+# def build_si_model(
+#     population_graph,
+#     infection_probability,
+#     num_treatments,
+#     max_treatments=None,
+#     treatment_transition_matrix=None,
+#     initial_health_state=None,
+#     initial_health_state_seed=100,
+#     burn_in=0):
+#   """Builds a Susceptible-Infected environment."""
 
-  if max_treatments is None:
-    max_treatments = population_graph.number_of_nodes()
+#   if max_treatments is None:
+#     max_treatments = population_graph.number_of_nodes()
 
-  state_names = ['susceptible', 'infected']
-  healthy_index = 0
-  infectious_index = 1
+#   state_names = ['susceptible', 'infected']
+#   healthy_index = 0
+#   infectious_index = 1
 
-  transition_matrix = np.array([[0, 0],
-                                [0, 1]])
-  if treatment_transition_matrix is None:
-    treatment_transition_matrix = np.array([[1, 0], [1, 0]])
+#   transition_matrix = np.array([[0, 0],
+#                                 [0, 1]])
+#   if treatment_transition_matrix is None:
+#     treatment_transition_matrix = np.array([[1, 0], [1, 0]])
 
-  params = Params(
-      population_graph=population_graph,
-      transition_matrix=transition_matrix,
-      treatment_transition_matrix=treatment_transition_matrix,
-      state_names=state_names,
-      healthy_index=healthy_index,
-      infectious_index=infectious_index,
-      healthy_exit_index=infectious_index,
-      infection_probability=infection_probability,
-      initial_health_state=initial_health_state,
-      initial_health_state_seed=initial_health_state_seed,
-      num_treatments=num_treatments,
-      max_treatments=max_treatments,
-      burn_in=burn_in)
+#   params = Params(
+#       population_graph=population_graph,
+#       transition_matrix=transition_matrix,
+#       treatment_transition_matrix=treatment_transition_matrix,
+#       state_names=state_names,
+#       healthy_index=healthy_index,
+#       infectious_index=infectious_index,
+#       healthy_exit_index=infectious_index,
+#       infection_probability=infection_probability,
+#       initial_health_state=initial_health_state,
+#       initial_health_state_seed=initial_health_state_seed,
+#       num_treatments=num_treatments,
+#       max_treatments=max_treatments,
+#       burn_in=burn_in)
 
-  return InfectiousDiseaseEnv(params)
+#   return InfectiousDiseaseEnv(params)
 
 
 @gin.configurable
@@ -393,19 +396,21 @@ def build_sir_model(
   if max_treatments is None:
     max_treatments = population_graph.number_of_nodes()
 
-  state_names = ['susceptible', 'infected', 'recovered']
+  state_names = ['susceptible', 'infected', 'recovered'] 
   healthy_index = 0
   healthy_exit_index = 1
-  infectious_index = 1
-
+  infectious_index = 1 # xyc: it seems that healthy_exit "is" infectious
+  
+  # last row: "recover" is an absorbing state
+  # first row: do not need to specify here since it is governed by infection_probability. 
   transition_matrix = np.array([
       [0, 0, 0],
       [0, 1 - infected_exit_probability, infected_exit_probability],
-      [0, 0, 1]])
+      [0, 0, 1]]) 
 
   if treatment_transition_matrix is None:
-    # By default, treatment moves people from any initial state into
-    # 'recovered.'
+    # By default, treatment moves people from any initial state into 'recovered.'
+    # Note: not using this in practice
     treatment_transition_matrix = np.array([
         [0, 0, 1],
         [0, 0, 1],
@@ -429,56 +434,56 @@ def build_sir_model(
   return InfectiousDiseaseEnv(params)
 
 
-@gin.configurable
-def build_seir_model(
-    population_graph,
-    infection_probability,
-    exposed_exit_probability,
-    infected_exit_probability,
-    num_treatments,
-    max_treatments=None,
-    treatment_transition_matrix=None,
-    initial_health_state=None,
-    initial_health_state_seed=100,
-    burn_in=0):
-  """Builds a Susceptible-Exposed-Infected-Recovered environment."""
-  if max_treatments is None:
-    max_treatments = population_graph.number_of_nodes()
+# @gin.configurable
+# def build_seir_model(
+#     population_graph,
+#     infection_probability,
+#     exposed_exit_probability,
+#     infected_exit_probability,
+#     num_treatments,
+#     max_treatments=None,
+#     treatment_transition_matrix=None,
+#     initial_health_state=None,
+#     initial_health_state_seed=100,
+#     burn_in=0):
+#   """Builds a Susceptible-Exposed-Infected-Recovered environment."""
+#   if max_treatments is None:
+#     max_treatments = population_graph.number_of_nodes()
 
-  state_names = ['susceptible', 'exposed', 'infected', 'recovered']
-  healthy_index = 0
-  healthy_exit_index = 1
-  infectious_index = 2
+#   state_names = ['susceptible', 'exposed', 'infected', 'recovered']
+#   healthy_index = 0
+#   healthy_exit_index = 1
+#   infectious_index = 2
 
-  transition_matrix = np.zeros((4, 4))
-  transition_matrix[healthy_exit_index, :] = [
-      0, 1 - exposed_exit_probability, exposed_exit_probability, 0]
-  transition_matrix[infectious_index, :] = [
-      0, 0, 1 - infected_exit_probability, infected_exit_probability]
-  transition_matrix[3, :] = [0, 0, 0, 1]
+#   transition_matrix = np.zeros((4, 4))
+#   transition_matrix[healthy_exit_index, :] = [
+#       0, 1 - exposed_exit_probability, exposed_exit_probability, 0]
+#   transition_matrix[infectious_index, :] = [
+#       0, 0, 1 - infected_exit_probability, infected_exit_probability]
+#   transition_matrix[3, :] = [0, 0, 0, 1]
 
-  if treatment_transition_matrix is None:
-    # By default, treatment moves people from any initial state into
-    # 'recovered.'
-    treatment_transition_matrix = np.array([
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1]])
+#   if treatment_transition_matrix is None:
+#     # By default, treatment moves people from any initial state into
+#     # 'recovered.'
+#     treatment_transition_matrix = np.array([
+#         [0, 0, 0, 1],
+#         [0, 0, 0, 1],
+#         [0, 0, 0, 1],
+#         [0, 0, 0, 1]])
 
-  params = Params(
-      population_graph=population_graph,
-      transition_matrix=transition_matrix,
-      treatment_transition_matrix=treatment_transition_matrix,
-      state_names=state_names,
-      healthy_index=healthy_index,
-      infectious_index=infectious_index,
-      healthy_exit_index=healthy_exit_index,
-      infection_probability=infection_probability,
-      initial_health_state=initial_health_state,
-      initial_health_state_seed=initial_health_state_seed,
-      num_treatments=num_treatments,
-      max_treatments=max_treatments,
-      burn_in=burn_in)
+#   params = Params(
+#       population_graph=population_graph,
+#       transition_matrix=transition_matrix,
+#       treatment_transition_matrix=treatment_transition_matrix,
+#       state_names=state_names,
+#       healthy_index=healthy_index,
+#       infectious_index=infectious_index,
+#       healthy_exit_index=healthy_exit_index,
+#       infection_probability=infection_probability,
+#       initial_health_state=initial_health_state,
+#       initial_health_state_seed=initial_health_state_seed,
+#       num_treatments=num_treatments,
+#       max_treatments=max_treatments,
+#       burn_in=burn_in)
 
-  return InfectiousDiseaseEnv(params)
+#   return InfectiousDiseaseEnv(params)

@@ -6,16 +6,15 @@ from gym import spaces
 
 from networkx.algorithms import community
 
-from infectious_experiment.environments import core
-from infectious_experiment.config import EP_TIMESTEPS, ZETA_1, ZETA_0
+from infectious_experiment.config_fair import EP_TIMESTEPS
 
 
-class PPOEnvWrapper(gym.Wrapper):
+class PPOEnvWrapper_fair(gym.Wrapper):
     def __init__(self,
                  env,
                  reward_fn,
                  ep_timesteps=EP_TIMESTEPS):
-        super(PPOEnvWrapper, self).__init__(env)
+        super(PPOEnvWrapper_fair, self).__init__(env)
 
         self.env = env
 
@@ -45,34 +44,29 @@ class PPOEnvWrapper(gym.Wrapper):
             individual: comm_i for comm_i, comm in enumerate(self.communities) for individual in comm
         }
 
-        # Keep track of how many vaccines go to each community
-        self.num_vaccines_per_community = np.zeros(self.num_communities)
+        # Keep track of how many vaccines go to each community (cummulative)
+        self.num_vaccines_per_community = np.zeros(self.num_communities)           # xyc: Currently not used by reward
         # Keep track of previous health states to compute newly infected number
         self.prev_health_states = copy.deepcopy(self.env.state.health_states)
-        # Newly infected in each community
-        self.num_newly_infected_per_community = np.zeros(self.num_communities)
+        # Newly infected in each community (cummulative)
+        self.num_newly_infected_per_community = np.zeros(self.num_communities)     # xyc: Currently not used by reward
 
-        self.delta = 0
-        self.delta_delta = 0
 
-    def format_observation(self, obs, padding=2):
+    def format_observation(self, obs):
         """Formats health state observations into a numpy array.
         The health-states are one-hot encoded as row vectors, and then stacked
         together vertically to create a |population| x |health states| array.
+
         The population is padded on top and bottom with "recovered" indivduals,
         which don't affect the disease spread but make convolutions simpler.
         Args:
           obs: An observation dictionary.
-          padding: An integer indicating how many people to use for padding.
         Returns:
           A numpy array suitable for passing to a DQN agent.
-
-        REMOVED PADDING
         """
         vecs = []
         initial_params = self.env.initial_params
         num_states = len(initial_params.state_names)
-        recovered_state = initial_params.state_names.index('recovered') # xyc: never used?
         for state in obs['health_states']:
             vecs.append(np.zeros((num_states, 1), dtype=float))
             vecs[-1][state] = 1.0
@@ -91,8 +85,6 @@ class PPOEnvWrapper(gym.Wrapper):
         self.prev_health_states = copy.deepcopy(self.env.state.health_states)
         # Newly infected in each community
         self.num_newly_infected_per_community = np.zeros(self.num_communities)
-        self.delta = 0
-        self.delta_delta = 0
 
         return self.format_observation(self.env.reset())
 
@@ -103,31 +95,32 @@ class PPOEnvWrapper(gym.Wrapper):
         action = self.process_action(action)
         obs, _, done, info = self.env.step(action)
 
+        # fairness signal:
+        r_U = np.zeros(self.num_communities) # number of vaccine per group at the current step
+        r_B = np.zeros(self.num_communities) # number of newly infected individuals per group at the current step
+
         # Update the number of vaccines in each community
         if action is not None:
+            # xyc: it seems that this code only works when the number of vaccines <= 1 per step. 
             comm_i = self.communities_map[action[0]]
             self.num_vaccines_per_community[comm_i] += 1
+
+            r_U[comm_i] += 1
+
         # Compute newly infected
         for i, (health_state, prev_health_state) in enumerate(zip(self.env.state.health_states, self.prev_health_states)):
-            # 1 is the index in self.env.state.params.state_names for infected
+            # 1 stands for infectious
             if health_state == 1 and health_state != prev_health_state:
                 comm_i = self.communities_map[i]
                 self.num_newly_infected_per_community[comm_i] += 1
 
-        r = self.reward_fn(health_states=self.env.state.health_states,
-                           num_vaccines_per_community=self.num_vaccines_per_community,
-                           num_newly_infected_per_community=self.num_newly_infected_per_community,
-                           eta0=ZETA_0,
-                           eta1=ZETA_1)
+                r_B[comm_i] += 1
 
-        old_delta = self.delta
-        self.delta = self.reward_fn.calc_delta(num_vaccines_per_community=self.num_vaccines_per_community,
-                                               num_newly_infected_per_community=self.num_newly_infected_per_community)
-        self.delta_delta = self.delta - old_delta
+        r = self.reward_fn(health_states=self.env.state.health_states)
 
         self.timestep += 1
         if self.timestep == self.ep_timesteps:
             done = True
 
-        return self.format_observation(obs), r, done, info
+        return self.format_observation(obs), [r,r_U,r_B], done, info
 

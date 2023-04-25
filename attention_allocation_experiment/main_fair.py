@@ -144,8 +144,6 @@ def main():
     # others
     parser.add_argument('--train', action='store_false')
     parser.add_argument('--algorithm', type=str, default='ppo', choices=['ppo']) # later, change this to ppo_fair
-    parser.add_argument('--display_eval_path', dest='display_eval_path', type=str, default=None)
-    parser.add_argument('--show_train_progress', action='store_false')
 
     
     args = parser.parse_args()
@@ -172,10 +170,6 @@ def main():
         # plot evaluation
         plot_return_bias(args.exp_path,smooth=2)
 
-
-
-    if args.display_eval_path is not None:
-        display_eval_results(eval_dir=args.display_eval_path)
 
         
 

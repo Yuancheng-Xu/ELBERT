@@ -9,7 +9,7 @@ EXP_DIR = './experiments/fair_ppo/'
 # POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
 #                      net_arch = [128, 128, dict(vf=[128, 64], pi=[128, 64])])  # actor-critic architecture
 POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,
-                     net_arch = dict(vf=[256, 128], pi=[256, 128])) # new sb3: shared layers is not defined in net_arch here. 
+                     net_arch = dict(vf=[128, 64], pi=[128, 64])) # new sb3: shared layers is not defined in net_arch here. 
 SAVE_FREQ = 1e8  # save frequency in timesteps: don't save model for now
 BUFFER_SIZE_TRAINING = 4096 # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
 

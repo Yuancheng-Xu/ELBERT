@@ -17,13 +17,12 @@ from stable_baselines3.common.monitor import *
 from stable_baselines3.common.type_aliases import GymObs
 
 # for evaluation
-from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
-from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
-from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
-from attention_allocation_experiment.config_fair import ZETA_0, ZETA_1
+from infectious_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
+from infectious_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
+from infectious_experiment.environments.rewards import InfectiousReward_fair,calc_percent_healthy
 import numpy as np
 import torch
-# import tqdm
+from networkx.algorithms import community
 import random
 import copy
 
@@ -31,7 +30,7 @@ class DummyVecEnv_fair(DummyVecEnv):
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         super().__init__(env_fns)
         
-        self.num_groups = env_fns[0]().env.state.params.n_locations
+        self.num_groups = env_fns[0]().env.num_communities
         self.buf_rews = [np.zeros((self.num_envs,), dtype=np.float32),[np.zeros((self.num_envs,), dtype=np.float32) for g in range(self.num_groups)],[np.zeros((self.num_envs,), dtype=np.float32) for g in range(self.num_groups)]]
 
     def step_wait(self) -> Tuple[VecEnvObs, List[np.ndarray], np.ndarray, List[Dict]]:
@@ -55,7 +54,7 @@ class Monitor_fair(Monitor):
     def __init__(self, env: gym.Env, filename: Optional[str] = None, allow_early_resets: bool = True, reset_keywords: Tuple[str, ...] = (), info_keywords: Tuple[str, ...] = ()):
         super().__init__(env, filename, allow_early_resets, reset_keywords, info_keywords)
 
-        self.num_groups =  env.state.params.n_locations
+        self.num_groups =  env.num_communities
         # e.g.: [ [], [[],[],[]], [[],[],[]] ]
         self.rewards: List[Union[List[float],List[List[float]]]] = [[],[[] for g in range(self.num_groups)], [[] for g in range(self.num_groups)]] 
         self.episode_returns: List[Union[List[float],List[List[float]]]] = [[],[[] for g in range(self.num_groups)], [[] for g in range(self.num_groups)]]
@@ -128,30 +127,29 @@ def evaluate_fair(env, agent, num_eps):
     num_eps: number of episodes
     write_path: add data recording to path
 
-    write to disk the evaluation results 
-    1. reward
-    2. bias
-
-    TODO: need to do sanity check: whether r_U is equal to some function of the original evaluation
+    write to disk the evaluation results of reward and bias
     '''
     assert isinstance(agent, ActorCriticPolicy_fair), 'evaluate_fair only works for ActorCriticPolicy_fair policy'
     assert isinstance(env, PPOEnvWrapper_fair), 'env should be of type: PPOEnvWrapper_fair'
 
-    num_groups = env.state.params.n_locations
+    num_groups = env.num_communities
     seeds = [random.randint(0, 10000) for _ in range(num_eps)]
     num_timesteps = env.ep_timesteps # number of steps per episodes (unless done=True) 
 
-    reward_fn = AttentionAllocationReward_fair()
+    reward_fn = InfectiousReward_fair()
 
+    # helper variables
     eval_data = {
-        # helper variables
-        'tot_rews': np.zeros((num_eps, num_timesteps)),  # The rewards per timestep per episode
-        'tot_att_all': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep per episode
-        'tot_true_rates': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep per episode
-        'tot_incidents_seen': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep per episode
-        'tot_incidents_occurred': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep per episode
-        'tot_incidents_missed': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents missed per site per timestep per episode
-        # 'tot_rew_infos': []  # The values of each term in the reward per timestep per episode, shape is (num_eps, num_timesteps, dict)
+        'rews_over_time': np.zeros((num_eps, num_timesteps)),  # The reward per timestep per episode
+        'vaccines_over_time': np.zeros((num_eps, num_timesteps, num_groups)), # vaccine per community per timestep per episode
+        'infected_over_time': np.zeros((num_eps, num_timesteps, num_groups)), # newly infected per community per timestep per episode
+    }
+
+    communities_generator = community.girvan_newman(env.state.population_graph)
+    communities = tuple(sorted(c) for c in next(communities_generator))
+    # Map individuals in the graph to a community
+    communities_map = {
+        individual: comm_i for comm_i, comm in enumerate(communities) for individual in comm
     }
 
     for ep in range(num_eps):
@@ -159,60 +157,42 @@ def evaluate_fair(env, agent, num_eps):
         np.random.seed(seeds[ep])
         torch.manual_seed(seeds[ep])
 
-        ep_data = {
-            'rews': np.zeros(num_timesteps),  # The reward per timestep of this episode
-            'att_all': np.zeros((num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep of this episode
-            'true_rates': np.zeros((num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep of this episode
-            # 'deltas': np.zeros(num_timesteps),  # The deltas per timestep of this episode
-            'ep_incidents_seen': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep of this episode
-            'ep_incidents_occurred': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep of this episode
-            # 'rew_infos': [],  # The values of each term in the reward per timestep of this episode
-        }
-
         obs = env.reset()
         done = False
-        # print(f'Evaluation:  Episode {ep}:')
-        # for t in tqdm.trange(num_timesteps):
 
         for t in range(num_timesteps):
+
+            prev_health_states = copy.deepcopy(env.state.health_states)
+
+            action = None
             action = agent.predict(obs)[0]
+            a = env.process_action(action)
 
             obs, _, done, _ = env.step(action)
 
-            # Update total incidents variables
-            ep_data['ep_incidents_seen'][t] = env.state.incidents_seen
-            ep_data['ep_incidents_occurred'][t] = env.state.incidents_occurred
+            # Update the number of vaccines in each community
+            if a is not None:
+                comm_i = communities_map[np.array([a]).flatten()[0]]
+                eval_data['vaccines_over_time'][ep][t][comm_i] += 1
+            # Compute newly infected
+            for i, (health_state, prev_health_state) in enumerate(
+                    zip(env.state.health_states, prev_health_states)):
+                # 1 is the index in self.env.state.params.state_names for infected
+                if health_state == 1 and health_state != prev_health_state:
+                    comm_i = communities_map[i]
+                    eval_data['infected_over_time'][ep][t][comm_i] += 1
 
-            r = reward_fn(incidents_seen=env.state.incidents_seen,
-                          incidents_occurred=env.state.incidents_occurred,
-                          zeta0=ZETA_0,
-                          zeta1=ZETA_1)
+            r = reward_fn(health_states=env.state.health_states)
+            eval_data['rews_over_time'][ep][t] = r
             
-
-            # ep_data['rew_infos'].append(reward_fn.rew_info)
-            ep_data['rews'][t] = r
-            ep_data['att_all'][t] = env.process_action(action) 
-            ep_data['true_rates'][t] = env.state.params.incident_rates
-            # ep_data['deltas'][t] = reward_fn.calc_delta(ep_incidents_seen=ep_data['ep_incidents_seen'],
-            #                                             ep_incidents_occurred=ep_data['ep_incidents_occurred'])
-
             if done:
                 break
 
-        # Store the episodic data in eval data
-        eval_data['tot_rews'][ep] = ep_data['rews']
-        eval_data['tot_att_all'][ep] = ep_data['att_all']
-        eval_data['tot_true_rates'][ep] = ep_data['true_rates']
-        eval_data['tot_incidents_seen'][ep] = ep_data['ep_incidents_seen']
-        eval_data['tot_incidents_occurred'][ep] = ep_data['ep_incidents_occurred']
-        eval_data['tot_incidents_missed'][ep] = ep_data['ep_incidents_occurred'] - ep_data['ep_incidents_seen']
-        # eval_data['tot_rew_infos'].append(copy.deepcopy(ep_data['rew_infos']))
-
-    U = np.sum(eval_data['tot_incidents_seen'],axis=(0,1))
-    B = np.sum(eval_data['tot_incidents_occurred'],axis=(0,1)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
+    U = np.sum(eval_data['vaccines_over_time'],axis=(0,1))
+    B = np.sum(eval_data['infected_over_time'],axis=(0,1)) + 1 * num_eps # 1 * num_eps is for adaptation to the formula in Eric's paper
     # essential (only write these to disk): average across episodes and timesteps
     eval_data_essential = {}
-    eval_data_essential['return'] = eval_data['tot_rews'].mean() # average across episodes and timesteps
+    eval_data_essential['return'] = eval_data['rews_over_time'].mean() # average across episodes and timesteps
     ratio_list = []
     for g in range(num_groups):
         eval_data_essential['ratio_{}'.format(g)] = U[g]/B[g]
@@ -221,4 +201,6 @@ def evaluate_fair(env, agent, num_eps):
     eval_data_essential['benefit_max'] = max(ratio_list)
     eval_data_essential['benefit_min'] = min(ratio_list)
 
+
     return eval_data_essential
+

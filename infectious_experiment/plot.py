@@ -8,7 +8,7 @@ import pandas as pd
 # for smoothing
 from scipy.ndimage.filters import gaussian_filter1d
 
-from attention_allocation_experiment.config_fair import EXP_DIR
+from infectious_experiment.config_fair import EXP_DIR
 
 
 def plot_return_bias(exp_path, save=True, smooth=-1):
@@ -20,7 +20,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     # to numpy
     num_samples = data['num_timesteps'].to_numpy()
 
-    return_arr = data['return'].to_numpy() # this is the reward averaged across timesteps and episodes, as in attention_allocation_experiment.agents.ppo.sb3.utils_fair
+    return_arr = data['return'].to_numpy() # this is the reward averaged across timesteps and episodes, as in infectious_experiment.agents.ppo.sb3.utils_fair
     benefit_max = data['benefit_max'].to_numpy()
     benefit_min = data['benefit_min'].to_numpy()
     bias = data['bias'].to_numpy()
@@ -59,17 +59,9 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
         fig.show()
 
 
-# +
-# exp_path = 'betaSmooth_1/lr_1e-6_samples_5e6_zeta0_0/b_0'
-# plot_return_bias(exp_path,save=False)
-
-# +
-# smooth_val = 10
-# exp_path_base = 'betaSmooth_1/lr_1e-6_samples_5e6_zeta0_0/b_'
-# beta_list = [0,10,50,100,200,500,1000,2000]
-
-# # exp_path_base = 'betaSmooth_5/lr_1e-6_samples_5e6_zeta0_0_attUnit_6/b_'
-# # beta_list = [0,20, 50,100,200,500,1000,2000]
-
-# for beta in beta_list:
-#     plot_return_bias(exp_path_base + str(beta),save=False, smooth = 2)
+bias_list = [0,20,50,100,200,400,1000,2000]
+bias_list = [0,200]
+exp_path_base = 'lr_1e-6_samples_5e6/b_'
+for b in bias_list:
+    exp_path = exp_path_base + str(b)
+    plot_return_bias(exp_path,save=False)
