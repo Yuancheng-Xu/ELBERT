@@ -4,6 +4,8 @@
 ### experimental results
 ./experiments
 */experiments
+*/auto_experiments
+*/auto_logs
 
 */experiments_wrongArchitectureLarge
 
