@@ -25,7 +25,7 @@ from __future__ import print_function
 from typing import Any, Optional
 import numpy as np
 
-# from lending_experiment.config import OMEGA
+from lending_experiment.config import OMEGA
 from lending_experiment.environments import core
 
 
