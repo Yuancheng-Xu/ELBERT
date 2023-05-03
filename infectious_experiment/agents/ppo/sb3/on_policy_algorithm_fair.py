@@ -33,6 +33,9 @@ import networkx as nx
 import pandas as pd 
 import os
 
+# Chenghao's env
+from infectious_experiment.new_env import create_GeneralInfectiousDiseaseEnv
+
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
     """
@@ -313,21 +316,27 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
                 self.policy.set_training_mode(False)
                 # new env for eval
-                graph = nx.karate_club_graph()
-                initial_health_state = [0 for _ in range(graph.number_of_nodes())]
-                initial_health_state[0] = 1
-                env_eval = infectious_disease.build_sir_model(
-                    population_graph=graph,
-                    infection_probability=INFECTION_PROBABILITY,
-                    infected_exit_probability=INFECTED_EXIT_PROBABILITY,
-                    num_treatments=NUM_TREATMENTS,
-                    max_treatments=1,
-                    burn_in=BURNIN,
-                    treatment_transition_matrix=np.array([[0, 0, 1],
-                                                        [0, 1, 0],
-                                                        [0, 0, 1]]),
-                    initial_health_state = copy.deepcopy(initial_health_state)
-                )
+                if 'General' in str(type(self.env.envs[0].env.env)):
+                    print('Evaluation: Using Chenghao\'s modified env')
+                    env_eval = create_GeneralInfectiousDiseaseEnv()
+                else:
+                    print('Evaluation: Using Original Eric\'s modified env')
+                    graph = nx.karate_club_graph()
+                    initial_health_state = [0 for _ in range(graph.number_of_nodes())]
+                    initial_health_state[0] = 1
+                    env_eval = infectious_disease.build_sir_model(
+                        population_graph=graph,
+                        infection_probability=INFECTION_PROBABILITY,
+                        infected_exit_probability=INFECTED_EXIT_PROBABILITY,
+                        num_treatments=NUM_TREATMENTS,
+                        max_treatments=1,
+                        burn_in=BURNIN,
+                        treatment_transition_matrix=np.array([[0, 0, 1],
+                                                            [0, 1, 0],
+                                                            [0, 0, 1]]),
+                        initial_health_state = copy.deepcopy(initial_health_state)
+                    )
+                
                 env_eval = PPOEnvWrapper_fair(env=env_eval, reward_fn=InfectiousReward_fair, ep_timesteps=EP_TIMESTEPS_EVAL) 
                 # evaluate and write to disk
                 eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)

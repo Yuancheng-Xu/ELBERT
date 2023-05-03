@@ -33,6 +33,9 @@ from infectious_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Mo
 # plot evaluation
 from infectious_experiment.plot import plot_return_bias
 
+# Chenghao's env
+from infectious_experiment.new_env import create_GeneralInfectiousDiseaseEnv
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('Using device: ', device)
 
@@ -105,6 +108,9 @@ def main():
     parser.add_argument('--bias_coef', type=float, default=1.0)
     parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
     parser.add_argument('--train_timesteps', type=int, default=5e6) 
+
+    parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
+
     # evaluation
     parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
 
@@ -120,25 +126,29 @@ def main():
     exp_dir  = os.path.join(EXP_DIR,args.exp_path) 
     print('exp_dir:{}'.format(exp_dir))
 
-    graph = GRAPHS[GRAPH_NAME]
-    # Randomly initialize a node to infected
-    initial_health_state = [0 for _ in range(graph.number_of_nodes())]
-    initial_health_state[0] = 1
-    env = infectious_disease.build_sir_model(
-        population_graph=graph,
-        infection_probability=INFECTION_PROBABILITY,
-        infected_exit_probability=INFECTED_EXIT_PROBABILITY,
-        num_treatments=NUM_TREATMENTS,
-        max_treatments=1,
-        burn_in=BURNIN,
-        # Treatments turn susceptible people into recovered without having them
-        # get sick.
-        treatment_transition_matrix=np.array([[0, 0, 1],
-                                              [0, 1, 0],
-                                              [0, 0, 1]]),
-        initial_health_state = copy.deepcopy(initial_health_state)
-    )
-
+    if not args.modifedEnv:
+        print('Using the original env in Eric\'s code')
+        graph = GRAPHS[GRAPH_NAME]
+        # Randomly initialize a node to infected
+        initial_health_state = [0 for _ in range(graph.number_of_nodes())]
+        initial_health_state[0] = 1
+        env = infectious_disease.build_sir_model(
+            population_graph=graph,
+            infection_probability=INFECTION_PROBABILITY,
+            infected_exit_probability=INFECTED_EXIT_PROBABILITY,
+            num_treatments=NUM_TREATMENTS,
+            max_treatments=1,
+            burn_in=BURNIN,
+            # Treatments turn susceptible people into recovered without having them
+            # get sick.
+            treatment_transition_matrix=np.array([[0, 0, 1],
+                                                  [0, 1, 0],
+                                                  [0, 0, 1]]),
+            initial_health_state = copy.deepcopy(initial_health_state)
+        )
+    else:
+        print('main_fair.py: Using Chenghao\'s modified env')
+        env = create_GeneralInfectiousDiseaseEnv()
 
     if args.train:
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
