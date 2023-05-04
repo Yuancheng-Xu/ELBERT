@@ -98,7 +98,8 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
 
         eval_write_path: str = None,
-        eval_interval: int = None, # evaluate every eval_interval times of rollout
+        eval_interval: int = None, # evaluate every eval_interval times of rollout,
+        modifedEnv: bool = None, # chenghao's modified env
     ):
         
         super(OnPolicyAlgorithm_fair, self).__init__(
@@ -117,6 +118,8 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
+
+        self.modifedEnv = modifedEnv # will remove after the env is settled down
 
         self.num_groups = env.num_groups # during training, env is a DummyVecEnv_fair object, which has self.num_groups
 
@@ -316,11 +319,11 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
                 self.policy.set_training_mode(False)
                 # new env for eval
-                if 'General' in str(type(self.env.envs[0].env.env)):
+                if self.modifedEnv:
                     print('Evaluation: Using Chenghao\'s modified env')
                     env_eval = create_GeneralInfectiousDiseaseEnv()
                 else:
-                    print('Evaluation: Using Original Eric\'s modified env')
+                    print('Evaluation: Using Original Eric\'s env')
                     graph = nx.karate_club_graph()
                     initial_health_state = [0 for _ in range(graph.number_of_nodes())]
                     initial_health_state[0] = 1

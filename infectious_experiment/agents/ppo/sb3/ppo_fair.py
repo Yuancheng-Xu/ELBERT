@@ -103,6 +103,8 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             
             eval_write_path: str = None,
             eval_interval: int = None, # evaluate every eval_interval times of rollout
+
+            modifedEnv: bool = None, # chenghao's modified env
     ):
 
         super(PPO_fair, self).__init__(
@@ -133,6 +135,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
             eval_write_path = eval_write_path,
             eval_interval= eval_interval,
+            modifedEnv = modifedEnv, # Chenghao's env
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN

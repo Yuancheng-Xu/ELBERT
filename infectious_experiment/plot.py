@@ -58,10 +58,9 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     else:
         fig.show()
 
-
-bias_list = [0,20,50,100,200,400,1000,2000]
-bias_list = [0,200]
-exp_path_base = 'lr_1e-6_samples_5e6/b_'
-for b in bias_list:
-    exp_path = exp_path_base + str(b)
-    plot_return_bias(exp_path,save=False)
+# +
+# bias_list = [0,0.1,0.5,1,2,4,5,10,15,20,25,30,40,50,100,200]
+# exp_path_base = 'lr_1e-6_samples_5e6/b_'
+# for b in bias_list:
+#     exp_path = exp_path_base + str(b)
+#     plot_return_bias(exp_path,save=False)

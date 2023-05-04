@@ -311,7 +311,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                     print('Evaluation: Using Chenghao\'s modified env')
                     env_eval = create_GeneralDelayedImpactEnv()
                 else:
-                    print('Evaluation: Using Original Eric\'s modified env')
+                    print('Evaluation: Using Original Eric\'s env')
                     env_params = DelayedImpactParams(
                         applicant_distribution=two_group_credit_clusters(
                             cluster_probabilities=CLUSTER_PROBABILITIES,

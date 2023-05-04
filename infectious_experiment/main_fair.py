@@ -44,7 +44,7 @@ GRAPHS = {'karate': nx.karate_club_graph()}
 
 
 
-def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir):
+def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -87,7 +87,8 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir):
                     beta_smooth = beta_smooth,
                     bias_coef=bias_coef,
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
-                    eval_interval = EVAL_INTERVAL)
+                    eval_interval = EVAL_INTERVAL,
+                    modifedEnv = modifedEnv)
 
         shutil.rmtree(exp_dir, ignore_errors=True)
         Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -152,7 +153,7 @@ def main():
 
     if args.train:
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
-              lr=args.lr, exp_dir=exp_dir)
+              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv)
         # plot evaluation
         plot_return_bias(args.exp_path,smooth=2)
 
