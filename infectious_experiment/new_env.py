@@ -11,7 +11,7 @@ from infectious_experiment.config import INFECTION_PROBABILITY, NUM_TREATMENTS, 
 GRAPHS = {'karate': nx.karate_club_graph()}
 
 ############################ new env Parameters ############################
-DISABLE_PROBILITY = 0.2
+DISABLE_PROBILITY = 0.1
 
 ############################ create new env ############################
 
