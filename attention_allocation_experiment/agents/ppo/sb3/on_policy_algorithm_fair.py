@@ -31,6 +31,9 @@ from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOE
 import pandas as pd 
 import os
 
+# Chenghao's env
+from attention_allocation_experiment.new_env import create_GeneralDelayedImpactEnv
+
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
     """
@@ -94,6 +97,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
 
         eval_write_path: str = None,
         eval_interval: int = None, # evaluate every eval_interval times of rollout
+        modifedEnv: bool = None, # chenghao's modified env
     ):
         
         super(OnPolicyAlgorithm_fair, self).__init__(
@@ -112,6 +116,8 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
+
+        self.modifedEnv = modifedEnv # will remove after the env is settled down
 
         self.num_groups = env.num_groups # during training, env is a DummyVecEnv_fair object, which has self.num_groups
 
@@ -310,16 +316,20 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             ### evaluation
             if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
                 self.policy.set_training_mode(False)
-                # new env for eval
-                env_params = Params(
-                    n_locations=N_LOCATIONS,
-                    prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
-                    incident_rates=INCIDENT_RATES,
-                    n_attention_units=N_ATTENTION_UNITS, 
-                    miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-                    extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-                    dynamic_rate=DYNAMIC_RATE)
-                env_eval = LocationAllocationEnv(params=env_params)
+                if self.modifedEnv:
+                    print('Evaluation: Using Chenghao\'s modified env')
+                    env_eval = create_GeneralDelayedImpactEnv()
+                else:
+                    # new env for eval
+                    env_params = Params(
+                        n_locations=N_LOCATIONS,
+                        prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
+                        incident_rates=INCIDENT_RATES,
+                        n_attention_units=N_ATTENTION_UNITS, 
+                        miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+                        extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+                        dynamic_rate=DYNAMIC_RATE)
+                    env_eval = LocationAllocationEnv(params=env_params)
                 env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=AttentionAllocationReward_fair,ep_timesteps=EP_TIMESTEPS_EVAL) 
                 # evaluate and write to disk
                 eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)

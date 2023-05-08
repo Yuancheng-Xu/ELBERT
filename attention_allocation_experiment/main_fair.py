@@ -17,7 +17,6 @@ from stable_baselines3.common.logger import configure
 # from stable_baselines3.common.monitor import Monitor # does not deal with multiple rewards
 # from stable_baselines3.common.vec_env import DummyVecEnv # does not deal with multiple rewards
 
-
 import sys
 sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
@@ -45,6 +44,10 @@ from attention_allocation_experiment.agents.ppo.sb3.utils_fair import DummyVecEn
 # plot evaluation
 from attention_allocation_experiment.plot import plot_return_bias
 
+# Chenghao's env
+from attention_allocation_experiment.new_env import create_GeneralDelayedImpactEnv
+
+
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cuda")
@@ -53,7 +56,7 @@ torch.cuda.empty_cache()
 
 
 
-def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir):
+def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv=False):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -96,7 +99,8 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir):
                     beta_smooth = beta_smooth,
                     bias_coef=bias_coef,
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
-                    eval_interval = EVAL_INTERVAL)
+                    eval_interval = EVAL_INTERVAL,
+                    modifedEnv = modifedEnv)
 
         shutil.rmtree(exp_dir, ignore_errors=True)
         Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -141,6 +145,8 @@ def main():
     # evaluation
     parser.add_argument('--exp_path', type=str, default='lr_1e-6/bias_1') # experiment result path exp_dir will be EXP_DIR/exp_path
 
+    parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
+
     # others
     parser.add_argument('--train', action='store_false')
     parser.add_argument('--algorithm', type=str, default='ppo', choices=['ppo']) # later, change this to ppo_fair
@@ -152,20 +158,25 @@ def main():
     exp_dir  = os.path.join(EXP_DIR,args.exp_path) 
     print('exp_dir:{}'.format(exp_dir))
 
-    env_params = Params(
-        n_locations=N_LOCATIONS,
-        prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
-        incident_rates=INCIDENT_RATES,
-        n_attention_units=N_ATTENTION_UNITS,
-        miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-        extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-        dynamic_rate=DYNAMIC_RATE)
-    env = LocationAllocationEnv(params=env_params)
+    if not args.modifedEnv:
+        print('Using the original env in Eric\'s code')
+        env_params = Params(
+            n_locations=N_LOCATIONS,
+            prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
+            incident_rates=INCIDENT_RATES,
+            n_attention_units=N_ATTENTION_UNITS,
+            miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+            extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
+            dynamic_rate=DYNAMIC_RATE)
+        env = LocationAllocationEnv(params=env_params)
+    else:
+        print('main_fair.py: Using Chenghao\'s modified env')
+        env = create_GeneralDelayedImpactEnv()
 
     if args.train:
         
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
-              lr=args.lr, exp_dir=exp_dir)
+              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv)
 
         # plot evaluation
         plot_return_bias(args.exp_path,smooth=2)
