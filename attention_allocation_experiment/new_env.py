@@ -1,7 +1,8 @@
 '''
 New Attention Allocation Env with the following modification from Eric's code
   1. Dynamic rates can be different among groups, and it can depend on whether the location obtain any attention. (for amplifying bias)
-  2. For all groups, their dynamic rates decay with the larger incident rates (for more 'long-term' effect)
+  2. For all groups, their dynamic rates decay with the incident rates (for more 'long-term' effect)
+  3. If there is not attetion allocated to a group with 0 as current incident rate, then the incdent rate may increase by 1 with some probability
 '''
 
 from attention_allocation_experiment.environments.attention_allocation import *
@@ -10,7 +11,8 @@ from attention_allocation_experiment.environments.attention_allocation import *
 N_LOCATIONS_1 = 5
 N_ATTENTION_UNITS_1 = 30
 
-ALPHA = 0.01
+ALPHA = 0.02
+THETA = 0.2
 
 INCIDENT_RATES_1 = [30, 25, 22.5, 17.5, 12.5]
 
@@ -65,6 +67,7 @@ class GeneralParams(core.Params):
     feature_coefficients = attr.ib(default=(0, 1))
 
     alpha = attr.ib(default=0.0)  # type: float
+    theta = attr.ib(default=0.0)  # type: float
 
 
 def _sample_incidents(rng, params):
@@ -121,7 +124,7 @@ def _get_location_features(params, rng, incidents_occurred):
     return shifted_feature_means + feature_noise
 
 
-def _general_update_state(state, incidents_occurred, incidents_reported, action, alpha=0.0):
+def _general_update_state(state, incidents_occurred, incidents_reported, action, alpha=0.0, theta=0.0):
     """Updates the state given the human_designed_policies' action.
 
     This function simulates attention discovering incidents in order to determine
@@ -170,6 +173,8 @@ def _general_update_state(state, incidents_occurred, incidents_reported, action,
         factor = - alpha * params.incident_rates[location_ind]
         attention = action[location_ind]
         if attention == 0:
+            if params.incident_rates[location_ind] <= 0.00001:
+                params.incident_rates[location_ind] += 1*np.random.binomial(1, theta)
             params.incident_rates[location_ind] += params.dynamic_rate[0][location_ind] * np.exp(factor)
         else:
             params.incident_rates[location_ind] = max(
@@ -236,6 +241,9 @@ class GeneralLocationAllocationEnv(core.FairnessEnv):
         assert (params.alpha>=0.0)
         self.alpha = params.alpha
 
+        assert (params.theta>=0.0 and params.theta<=1.0)
+        self.theta = params.theta
+
         super(GeneralLocationAllocationEnv, self).__init__(params)
         self._state_init()
 
@@ -289,7 +297,8 @@ env_params = GeneralParams(
     miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS_1)),
     extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS_1)),
     dynamic_rate=DYNAMIC_RATE_1,
-    alpha=ALPHA
+    alpha=ALPHA,
+    theta=THETA
 )
 
 def create_GeneralDelayedImpactEnv():
