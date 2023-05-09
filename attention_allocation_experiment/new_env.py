@@ -301,7 +301,7 @@ env_params = GeneralParams(
     theta=THETA
 )
 
-def create_GeneralDelayedImpactEnv():
+def create_GeneralLocationAllocationEnv():
   '''
   Directly create the new version of the env, without any argument 
   (all env parameters are hard-wired in the file)
