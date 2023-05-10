@@ -200,7 +200,7 @@ class GeneralLocationAllocationEnv(core.FairnessEnv):
 
     def __init__(self, params = None):
         if params is None:
-            params = Params()
+            params = GeneralParams()
 
         self.action_space = multinomial.Multinomial(params.n_locations,
                                                     params.n_attention_units)
@@ -283,7 +283,7 @@ class GeneralLocationAllocationEnv(core.FairnessEnv):
         """
         incidents_occurred, reported_incidents = _sample_incidents(
             state.rng, state.params)
-        _general_update_state(state, incidents_occurred, reported_incidents, action, self.alpha)
+        _general_update_state(state, incidents_occurred, reported_incidents, action, self.alpha, self.theta)
         return state
 ############################ new env Ends ############################
 
