@@ -40,12 +40,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('Using device: ', device)
 torch.cuda.empty_cache()
 
-def train_eval_auto(train_timesteps, env, env_params, lr, name,
+def train_eval_auto(train_timesteps, env, env_params, lr, name, seed,
                     eval_interval=EVAL_FREQ_AUTO, 
                     eval_eps=3, 
                     eval_timesteps=1000,
                     eval_env="mod"):
-    ori_dir = "%s_%s_%s" % (EXP_DIR_AUTO[name], lr, eval_env)
+    ori_dir = "%s_%s_%s_%d" % (EXP_DIR_AUTO[name], lr, eval_env, seed)
     save_dir = '%s/models/' % (ori_dir)
     eval_dir = '%s/eval/' % (ori_dir)
 
@@ -96,6 +96,8 @@ def main():
     
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
 
+    parser.add_argument('--seed', type=int, default=0)
+
     args = parser.parse_args()
 
     env_params = DelayedImpactParams(
@@ -121,6 +123,7 @@ def main():
                         env_params=env_params,
                         lr=args.lr,
                         name=args.algorithm,
+                        seed=args.seed,
                         eval_interval=EVAL_FREQ_AUTO,
                         eval_eps=3,
                         eval_timesteps=10000,

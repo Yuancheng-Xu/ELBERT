@@ -32,6 +32,8 @@ def evaluate_auto(env, agent, num_eps, num_timesteps, seeds):
         'tot_tn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TN per group per timestep per episode
         'tot_fn_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The FN per group per timestep per episode
         'tot_tpr_over_time': np.zeros((num_eps, num_timesteps, NUM_GROUPS)),  # The TPR per group per timestep per episode
+        'rewards': np.zeros(num_eps), # The total rewards per episode 
+        'bias': np.zeros(1), #bias
     }
 
     reward_fn = LendingReward()
@@ -94,6 +96,14 @@ def evaluate_auto(env, agent, num_eps, num_timesteps, seeds):
 
             eval_data['tot_rews_over_time'][ep][t] = r
             eval_data['tot_bank_cash_over_time'][ep][t] = bank_cash
+
+            
+            eval_data['rewards'] = eval_data['tot_bank_cash_over_time'][:, -1]
+
+            tp_count = eval_data['tot_tp']
+            p_count = eval_data['tot_tp']+eval_data['tot_fn']
+            ratio = np.divide(tp_count.sum(axis=0), p_count.sum(axis=0))
+            eval_data['bias'] = ratio.max()-ratio.min()
 
             if done:
                 break
