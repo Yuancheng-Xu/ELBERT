@@ -45,7 +45,7 @@ from attention_allocation_experiment.agents.ppo.sb3.utils_fair import DummyVecEn
 from attention_allocation_experiment.plot import plot_return_bias
 
 # Chenghao's env
-from attention_allocation_experiment.new_env import create_GeneralDelayedImpactEnv
+from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
 
 
 
@@ -171,7 +171,7 @@ def main():
         env = LocationAllocationEnv(params=env_params)
     else:
         print('main_fair.py: Using Chenghao\'s modified env')
-        env = create_GeneralDelayedImpactEnv()
+        env = create_GeneralLocationAllocationEnv()
 
     if args.train:
         

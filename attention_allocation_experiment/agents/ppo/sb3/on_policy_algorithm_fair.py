@@ -32,7 +32,7 @@ import pandas as pd
 import os
 
 # Chenghao's env
-from attention_allocation_experiment.new_env import create_GeneralDelayedImpactEnv
+from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
 
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
@@ -318,7 +318,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                 self.policy.set_training_mode(False)
                 if self.modifedEnv:
                     print('Evaluation: Using Chenghao\'s modified env')
-                    env_eval = create_GeneralDelayedImpactEnv()
+                    env_eval = create_GeneralLocationAllocationEnv()
                 else:
                     # new env for eval
                     env_params = Params(
