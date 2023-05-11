@@ -27,7 +27,7 @@ DYNAMIC_RATE = 0.1
 TRAIN_TIMESTEPS = 10_000_000  # Total train time
 LEARNING_RATE = 0.00001
 POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
-                     net_arch = [128, 128, dict(vf=[128, 64], pi=[128, 64])])  # actor-critic architecture
+                     net_arch = [dict(vf=[128, 64], pi=[128, 64])])  # actor-critic architecture
 SAVE_FREQ = 10000  # save frequency in timesteps
 REGULARIZE_ADVANTAGE = True  # Regularize advantage?
 # Weights for incidents seen, missed incidents, and delta in reward for the attention allocation environment

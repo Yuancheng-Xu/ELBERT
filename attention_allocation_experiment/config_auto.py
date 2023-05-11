@@ -39,7 +39,7 @@ DYNAMIC_RATE = 0.1
 TRAIN_TIMESTEPS = 10_000_000  # Total train time
 LEARNING_RATE = 0.00001
 POLICY_KWARGS = dict(activation_fn=torch.nn.ReLU,
-                     net_arch = [128, 128, dict(vf=[128, 64], pi=[128, 64])])  # actor-critic architecture
+                     net_arch = [dict(vf=[128, 64], pi=[128, 64])])  # actor-critic architecture
 SAVE_FREQ = 20480 # 10000  # save frequency in timesteps
 SAVE_FREQ_AUTO = 100000000000  # save frequency in timesteps
 EVAL_FREQ_AUTO = 5
