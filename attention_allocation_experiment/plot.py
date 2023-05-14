@@ -58,15 +58,14 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     else:
         fig.show()
 
-
 # +
-smooth_val = 10
-exp_path_base = 'Chenghao_env_05_08/betaSmooth_{}/lr_1e-6_samples_5e6/b_'.format(smooth_val)
-beta_list = [0,10,50,100,200,500,1000,2000]
+# smooth_val = 10
+# exp_path_base = 'Chenghao_env_05_08/betaSmooth_{}/lr_1e-6_samples_5e6/b_'.format(smooth_val)
+# beta_list = [0,10,50,100,200,500,1000,2000]
 
-exp_path_base = 'Chenghao_env_05_14/betaSmooth_3/lr_1e-6_samples_5e6/b_'
-beta_list = [0,100,500,1000,2000,3000,4000]
-beta_list = [2000,3000,4000,6000]
+# exp_path_base = 'Chenghao_env_05_14/betaSmooth_3/lr_1e-6_samples_5e6/b_'
+# beta_list = [0,100,500,1000,2000,3000,4000]
+# beta_list = [2000,3000,4000,6000]
 
-for beta in beta_list:
-    plot_return_bias(exp_path_base + str(beta) + str('_s_1'),save=False, smooth = 2)
+# for beta in beta_list:
+#     plot_return_bias(exp_path_base + str(beta) + str('_s_1'),save=False, smooth = 2)
