@@ -97,7 +97,7 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv)
                                              name_prefix='rl_model')
 
     model.set_logger(configure(folder=exp_dir))
-    model.learn(total_timesteps=train_timesteps, callback=checkpoint_callback, log_interval=50)
+    model.learn(total_timesteps=train_timesteps, callback=checkpoint_callback, log_interval=1) 
     model.save(save_dir + '/final_model')
 
 

@@ -13,7 +13,7 @@
                   "justMyCode": true,
 
                   "args": [
-                        "--algorithm", "ppo",
+                        "--algorithm", "ppo", "--modifedEnv"
                   ]
             }
       ]
