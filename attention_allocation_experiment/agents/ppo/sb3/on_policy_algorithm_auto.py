@@ -176,6 +176,10 @@ class OnPolicyAlgorithm_auto(BaseAlgorithm):
 
         n_steps = 0
         rollout_buffer.reset()
+
+        # reset env (in previous version, env is not reset)
+        self._last_obs = env.reset()
+
         # Sample new weights for the state dependent exploration
         if self.use_sde:
             self.policy.reset_noise(env.num_envs)

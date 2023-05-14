@@ -341,7 +341,7 @@ class PPO_auto(OnPolicyAlgorithm_auto):
             eval_env: Optional[GymEnv] = None,
             eval_freq: int = -1,
             n_eval_episodes: int = 5,
-            tb_log_name: str = "PPO",
+            tb_log_name: str = "PPO_auto",
             eval_log_path: Optional[str] = None,
             reset_num_timesteps: bool = True,
     ) -> "PPO_auto":
