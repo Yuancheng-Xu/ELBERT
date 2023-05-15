@@ -102,7 +102,8 @@ class PPO_auto(OnPolicyAlgorithm_auto):
             eval_write_path: str = None,
             eval_interval: int = None, # evaluate every eval_interval times of rollout
             eval_eps: int = 3,
-            eval_timesteps: int = 1000 
+            eval_timesteps: int = 1000,
+            eval_delta_obs: bool = False
     ):
 
         super(PPO_auto, self).__init__(
@@ -136,7 +137,8 @@ class PPO_auto(OnPolicyAlgorithm_auto):
             eval_write_path = eval_write_path,
             eval_interval = eval_interval,
             eval_eps = eval_eps,
-            eval_timesteps= eval_timesteps
+            eval_timesteps = eval_timesteps,
+            eval_delta_obs =eval_delta_obs 
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN

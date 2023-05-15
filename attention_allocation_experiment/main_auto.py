@@ -36,8 +36,9 @@ def train_eval_auto(train_timesteps, env, env_params, lr, name, seed,
                     eval_interval=EVAL_FREQ_AUTO, 
                     eval_eps=3, 
                     eval_timesteps=1000,
-                    eval_env="mod"):
-    ori_dir = "%s_%s_%s_%d" % (EXP_DIR_AUTO[name], lr, eval_env, seed)
+                    eval_env="mod",
+                    eval_delta_obs=False):
+    ori_dir = "%s_%s_%s_obs%d_%d" % (EXP_DIR_AUTO[name], lr, eval_env, int(eval_delta_obs), seed)
     save_dir = '%s/models/' % (ori_dir)
     eval_dir = '%s/eval/' % (ori_dir)
 
@@ -53,7 +54,8 @@ def train_eval_auto(train_timesteps, env, env_params, lr, name, seed,
 
     env = PPOEnvWrapper_auto(env=env, 
                         reward_fn=AttentionAllocationReward,
-                        name=name
+                        name=name,
+                        delta_obs=eval_delta_obs
                     )
     env = Monitor(env)
     env = DummyVecEnv([lambda: env])
@@ -77,8 +79,9 @@ def train_eval_auto(train_timesteps, env, env_params, lr, name, seed,
                 eval_write_path=eval_dir,
                 eval_interval=eval_interval,
                 eval_eps=eval_eps,
-                eval_timesteps=eval_timesteps 
-                )
+                eval_timesteps=eval_timesteps,
+                eval_delta_obs=eval_delta_obs
+            )
 
     shutil.rmtree(ori_dir, ignore_errors=True)
     Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -97,7 +100,8 @@ def main():
     parser.add_argument('--lr', type=float, default=LEARNING_RATE)
     parser.add_argument('--train_steps', type=float, default=TRAIN_TIMESTEPS)
     parser.add_argument('--algorithm', type=str, default='A-PPO', choices=['A-PPO', 'R-PPO', 'G-PPO'])
-    
+    parser.add_argument('--delta_obs', action='store_true')
+
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
 
     parser.add_argument('--seed', type=int, default=0)
@@ -134,6 +138,7 @@ def main():
                         eval_interval=EVAL_FREQ_AUTO,
                         eval_eps=3,
                         eval_timesteps=1000,
+                        eval_delta_obs=args.delta_obs,
                         eval_env=env_name
                     )
 

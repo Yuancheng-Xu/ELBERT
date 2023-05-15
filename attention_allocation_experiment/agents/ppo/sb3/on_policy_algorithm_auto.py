@@ -89,7 +89,8 @@ class OnPolicyAlgorithm_auto(BaseAlgorithm):
         eval_write_path: str = None,
         eval_interval: int = None, # evaluate every eval_interval times of rollout
         eval_eps: int = 3,
-        eval_timesteps: int = 1000
+        eval_timesteps: int = 1000,
+        eval_delta_obs: bool = False
     ):
 
         super(OnPolicyAlgorithm_auto, self).__init__(
@@ -122,6 +123,7 @@ class OnPolicyAlgorithm_auto(BaseAlgorithm):
         self.eval_interval = eval_interval
         self.eval_eps = eval_eps
         self.eval_timesteps = eval_timesteps
+        self.eval_delta_obs = eval_delta_obs
         self.name = None
 
         if _init_setup_model:
@@ -291,7 +293,7 @@ class OnPolicyAlgorithm_auto(BaseAlgorithm):
                     print('Evaluation: Using Original Eric\'s modified env')
                     env_eval = LocationAllocationEnv(self.eval_env_params)
                 # may need fix
-                env_eval = PPOEnvWrapper_auto(env=env_eval, reward_fn=AttentionAllocationReward, name=self.name, ep_timesteps=self.eval_timesteps)
+                env_eval = PPOEnvWrapper_auto(env=env_eval, reward_fn=AttentionAllocationReward, name=self.name, ep_timesteps=self.eval_timesteps, delta_obs=self.eval_delta_obs)
                 eval_seeds = [random.randint(0, self.eval_timesteps) for _ in range(self.eval_eps)]
                 
                 eval_data = evaluate_auto(env_eval, self.policy, num_eps=self.eval_eps, num_timesteps=self.eval_timesteps, seeds=eval_seeds)
