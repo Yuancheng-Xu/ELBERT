@@ -6,6 +6,8 @@ from gym import spaces
 from attention_allocation_experiment.config_fair import EP_TIMESTEPS, OBS_HIST_LEN, ZETA_0, ZETA_1
 from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
 
+DELTA_NOT_INCLUDE = True # default: true, not include the ratio "delta" in the obs space
+
 class PPOEnvWrapper_fair(gym.Wrapper):
   '''
   Observation space: Observation history (of length OBS_HIST_LEN) of incidents seen, occurred, attention allocated per site
@@ -21,12 +23,20 @@ class PPOEnvWrapper_fair(gym.Wrapper):
     super(PPOEnvWrapper_fair, self).__init__(env)
 
     # It's best to turn the observations into a single vector in box space, rather than dict.
-    self.observation_space = spaces.Box(
-      low=-np.inf,
-      high=np.inf,
-      shape=(env.state.params.n_locations * 3 * OBS_HIST_LEN,),
-      dtype=np.float32
-    )
+    if DELTA_NOT_INCLUDE:
+      self.observation_space = spaces.Box(
+        low=-np.inf,
+        high=np.inf,
+        shape=(env.state.params.n_locations * 3 * OBS_HIST_LEN,),
+        dtype=np.float32
+      )
+    else:
+      self.observation_space = spaces.Box(
+        low=-np.inf,
+        high=np.inf,
+        shape=(env.state.params.n_locations * 4 * OBS_HIST_LEN,),
+        dtype=np.float32
+      )
 
     self.action_space = spaces.Box(
       low=-3,
@@ -46,13 +56,19 @@ class PPOEnvWrapper_fair(gym.Wrapper):
 
 
     # Observation history of incidents seen, occurred, attention allocated per site
-    self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 3))
+    if DELTA_NOT_INCLUDE:
+      self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 3))
+    else:
+      self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 4))
 
   def reset(self):
     self.timestep = 0
     self.ep_incidents_seen = np.zeros((self.ep_timesteps, self.env.state.params.n_locations))
     self.ep_incidents_occurred = np.zeros((self.ep_timesteps, self.env.state.params.n_locations))
-    self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 3))
+    if DELTA_NOT_INCLUDE:
+      self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 3))
+    else:
+      self.observation_history = np.zeros((OBS_HIST_LEN, self.env.state.params.n_locations * 4))
 
     _ = self.env.reset()
 
@@ -71,7 +87,12 @@ class PPOEnvWrapper_fair(gym.Wrapper):
       done = True
 
     # Form observation history: pop the oldest and append the current observation
-    current_obs = np.concatenate((self.env.state.incidents_seen, self.env.state.incidents_occurred, action), axis=0)
+    if DELTA_NOT_INCLUDE:
+      current_obs = np.concatenate((self.env.state.incidents_seen, self.env.state.incidents_occurred, action), axis=0)
+    else:
+       deltas = np.sum(self.ep_incidents_seen, axis=0) / (np.sum(self.ep_incidents_occurred, axis=0) + 1)
+       current_obs = np.concatenate((self.env.state.incidents_seen, self.env.state.incidents_occurred, action, deltas), axis=0)
+
     self.observation_history = np.concatenate((self.observation_history[1:], np.expand_dims(current_obs, axis=0)))
     obs = self.observation_history.flatten()
 

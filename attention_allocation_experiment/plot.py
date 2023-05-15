@@ -34,12 +34,13 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     # plot
     fig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (8,8), sharex=True)
     fig.suptitle('exp path: {}'.format(exp_path))
-    # cash
+    # return
     ax1.plot(num_samples,return_arr)
     ax1.set_ylabel('return')
     ax1.set_title('average return / episode_len')
+#     ax1.set_ylim(-10, -4)
     ax1.grid()
-    # TPR
+    # benefit
     ax2.plot(num_samples,benefit_max,label='benefit_max')
     ax2.plot(num_samples,benefit_min,label='benefit_min')
     ax2.legend()
@@ -59,11 +60,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
         fig.show()
 
 # +
-# smooth_val = 10
-# exp_path_base = 'Chenghao_env_05_08/betaSmooth_{}/lr_1e-6_samples_5e6/b_'.format(smooth_val)
-# beta_list = [0,10,50,100,200,500,1000,2000]
-
-# exp_path_base = 'Chenghao_env_05_14/betaSmooth_3/lr_1e-6_samples_5e6/b_'
+# exp_path_base = 'Chenghao_env_05_14/betaSmooth_5/lr_1e-6_samples_5e6/b_'
 # beta_list = [0,100,500,1000,2000,3000,4000]
 # beta_list = [2000,3000,4000,6000]
 

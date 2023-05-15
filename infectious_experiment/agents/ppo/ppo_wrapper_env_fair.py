@@ -6,7 +6,11 @@ from gym import spaces
 
 from networkx.algorithms import community
 
-from infectious_experiment.config_fair import EP_TIMESTEPS
+from infectious_experiment.config_fair import EP_TIMESTEPS,ZETA_1, ZETA_0
+
+'''
+Note: I use the original Eric's reward function so that this wrapper also includes RPPO
+'''
 
 
 class PPOEnvWrapper_fair(gym.Wrapper):
@@ -116,7 +120,16 @@ class PPOEnvWrapper_fair(gym.Wrapper):
 
                 r_B[comm_i] += 1
 
-        r = self.reward_fn(health_states=self.env.state.health_states)
+        # if reward_fn is InfectiousReward_fair:
+        if 'fair' in str(self.reward_fn):
+            r = self.reward_fn(health_states=self.env.state.health_states)
+        # if reward_fn is the same as Eric's
+        else:
+            r = self.reward_fn(health_states=self.env.state.health_states,
+                           num_vaccines_per_community=self.num_vaccines_per_community,
+                           num_newly_infected_per_community=self.num_newly_infected_per_community,
+                           eta0=ZETA_0,
+                           eta1=ZETA_1)
 
         self.timestep += 1
         if self.timestep == self.ep_timesteps:

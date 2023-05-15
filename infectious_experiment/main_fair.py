@@ -24,7 +24,8 @@ sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 from infectious_experiment.config_fair import INFECTION_PROBABILITY, INFECTED_EXIT_PROBABILITY, NUM_TREATMENTS, BURNIN, \
     EXP_DIR, POLICY_KWARGS_fair, SAVE_FREQ, GRAPH_NAME, EVAL_INTERVAL
 from infectious_experiment.environments import infectious_disease
-from infectious_experiment.environments.rewards import InfectiousReward_fair
+# from infectious_experiment.environments.rewards import InfectiousReward_fair
+from infectious_experiment.environments.rewards import InfectiousReward
 from infectious_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 from infectious_experiment.agents.ppo.sb3.ppo_fair import PPO_fair
 from infectious_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
@@ -44,7 +45,7 @@ GRAPHS = {'karate': nx.karate_club_graph()}
 
 
 
-def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv):
+def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv, seed):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -59,7 +60,8 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv)
     print('env_params: ', env.state.params)
 
 
-    env = PPOEnvWrapper_fair(env=env, reward_fn=InfectiousReward_fair)
+    env = PPOEnvWrapper_fair(env=env, reward_fn=InfectiousReward) # use Eric's reward function so that we can use RPPO
+    # env = PPOEnvWrapper_fair(env=env, reward_fn=InfectiousReward_fair)
     env = Monitor_fair(env)
     env = DummyVecEnv_fair([lambda: env]) 
 
@@ -88,7 +90,8 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv)
                     bias_coef=bias_coef,
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
                     eval_interval = EVAL_INTERVAL,
-                    modifedEnv = modifedEnv)
+                    modifedEnv = modifedEnv,
+                    seed = seed)
 
         shutil.rmtree(exp_dir, ignore_errors=True)
         Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -109,6 +112,7 @@ def main():
     parser.add_argument('--bias_coef', type=float, default=1.0)
     parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
     parser.add_argument('--train_timesteps', type=int, default=5e6) 
+    parser.add_argument('--seed', type=int, default=123)
 
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env
 
@@ -153,7 +157,7 @@ def main():
 
     if args.train:
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
-              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv)
+              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv, seed = args.seed)
         # plot evaluation
         plot_return_bias(args.exp_path,smooth=2)
 

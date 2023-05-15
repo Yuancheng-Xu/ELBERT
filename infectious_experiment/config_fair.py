@@ -14,7 +14,10 @@ EVAL_NUM_EPS = 100 # number of episodes for evaluation; Eric: 200
 EVAL_INTERVAL = 5 # xyc used 200 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 20
 
-
+# note that in the wrapper_fair, I use the original Eric's reward_fn 
+# (just for training; evaluation still uses InfectiousReward_fair)
+ZETA_0 = 1
+ZETA_1 = 0.1 # RPPO: 0.1; GPPO: 0
 
 ########## Env Parameters ##########
 INFECTION_PROBABILITY = 0.5
