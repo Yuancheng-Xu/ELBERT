@@ -1,9 +1,10 @@
 '''
-This is the new version of PPO_fair
-First compute the "fair advantage function" via the chain rule formula
-Then do the PPO Clipping
-'''
+This is the Old version:
+Use PPO to compute all the policy gradients separately, then use the chain rule. 
+The un-clipped samples will be different for different reward. Maybe incorrect
 
+In the new version: use chain rule formula to compute the "fair advantage function", and then do the PPO Clipping.
+'''
 import warnings
 from typing import Any, Dict, Optional, Type, Union
 
@@ -209,7 +210,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
         # for logs
         entropy_losses = []
-        pg_losses, value_losses = [], [[], [[] for i in range(self.num_groups)], [[] for i in range(self.num_groups)]]
+        pg_losses, value_losses = [[], [[] for i in range(self.num_groups)], [[] for i in range(self.num_groups)]], [[], [[] for i in range(self.num_groups)], [[] for i in range(self.num_groups)]]
         clip_fractions = []
 
         continue_training = True
@@ -244,45 +245,32 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                         advantages[1][g] = (advantages[1][g] - advantages[1][g].mean()) / (advantages[1][g].std() + 1e-8)
                         advantages[2][g] = (advantages[2][g] - advantages[2][g].mean()) / (advantages[2][g].std() + 1e-8)
 
-                # Estimate for fairness return signals: Use the TD lambda return of the first state in each episode (buffer contain several episodes)
-                # Note: use the whole buffer (not minibatch); 
-                # since rollout_buffer.returns does not change during one call of train(), these estimate will be the same in every for loop
-                # Note: When using gae_lambda = 1 in the buffer, the following are Monte Carlo Estimate
-                value_U_estimate = torch.zeros(self.num_groups, device=self.device)   
-                value_B_estimate = torch.zeros(self.num_groups, device=self.device)  
-                for g in range(self.num_groups):
-                     value_U_estimate[g] = (th.tensor(self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
-                     value_B_estimate[g] = (th.tensor(self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
-                ratio_fairness = value_U_estimate / value_B_estimate 
-
-                # soft_bias_grad: gradient of soft bias w.r.t the ratio 
-                soft_bias, soft_bias_grad = soft_bias_value_and_gradient(copy.deepcopy(ratio_fairness),self.beta_smooth)
-                # In the paper, h = soft_bias**2, so partial_h/partial_z = 2 * soft_bias * soft_bias_grad 
-                grad_h = 2 * soft_bias * soft_bias_grad
-
-                # advantage version of gradient of U/B (using chain rule formula of grad_U/B)
-                advantages_grad_ratio_U_B = torch.zeros(self.num_groups, advantages[0].size(0), device=self.device)
-                for g in range(self.num_groups):
-                    advantages_grad_ratio_U_B[g] = (1/value_B_estimate[g]) * advantages[1][g] - \
-                        (value_U_estimate[g]/(value_B_estimate[g]**2)) * advantages[2][g]
-
-                # advantage fair = adv_main_reward - alpha * sum_g (grad_h_g * adv_grad_ratio_U_B_g )
-                advantages_fair = advantages[0] + torch.matmul(advantages_grad_ratio_U_B.t(), grad_h.float()) * (- self.bias_coef)
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
-
-                # clipped surrogate loss (here policy_loss accounts for BOTH main rewards and fairness signals)
-                policy_loss_1 = advantages_fair * ratio
-                policy_loss_2 = advantages_fair * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
-                policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
+                # clipped surrogate loss (for all returns): e.g. the gradient of policy_loss[1][g] is the policy gradient of return_U_g
+                policy_loss_1, policy_loss_2, policy_loss = [None, [None for i in range(self.num_groups)], [None for i in range(self.num_groups)]],\
+                    [None, [None for i in range(self.num_groups)], [None for i in range(self.num_groups)]],\
+                    [None, [None for i in range(self.num_groups)], [None for i in range(self.num_groups)]]
+                for i in range(3):
+                    if i == 0:
+                        policy_loss_1[i] = advantages[i] * ratio
+                        policy_loss_2[i] = advantages[i] * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                        policy_loss[i] = -th.min(policy_loss_1[i], policy_loss_2[i]).mean()
+                        # Logging 
+                        pg_losses[i].append(policy_loss[i].item())
+                    else:
+                        for g in range(self.num_groups):
+                            policy_loss_1[i][g] = advantages[i][g] * ratio
+                            policy_loss_2[i][g] = advantages[i][g] * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                            policy_loss[i][g] = -th.min(policy_loss_1[i][g], policy_loss_2[i][g]).mean()
+                            # Logging 
+                            pg_losses[i][g].append(policy_loss[i][g].item())
 
                 # Logging
-                pg_losses.append(policy_loss.item())
                 clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
                 clip_fractions.append(clip_fraction)
 
-                # value loss
                 if self.clip_range_vf is None:
                     # No clipping
                     values_pred = values
@@ -312,7 +300,6 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                         for g in range(self.num_groups):
                             value_loss[i][g] = F.mse_loss(rollout_data.returns[i][g], values_pred[i][g])
                             value_losses[i][g].append(value_loss[i][g].item())
-                value_loss = value_loss[0] + sum(value_loss[1]) + sum(value_loss[2])
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -323,8 +310,44 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
                 entropy_losses.append(entropy_loss.item())
 
+                ######## Loss function: the gradient of loss should be consistent with the derivation via chain rule
+
+                # Estimate for fairness return signals: Use the TD lambda return of the first state in each episode (buffer contain several episodes)
+                # Note: use the whole buffer (not minibatch); 
+                # since rollout_buffer.returns does not change during one call of train(), these estimate will be the same in every for loop
+                # Note: When using gae_lambda = 1 in the buffer, the following are Monte Carlo Estimate
+                value_U_estimate = np.zeros(self.num_groups)   
+                value_B_estimate = np.zeros(self.num_groups)  
+                for g in range(self.num_groups):
+                     value_U_estimate[g] = (self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).mean()
+                     value_B_estimate[g] = (self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).mean()
+                
+                assert len(self.rollout_buffer.returns) == 3 
+
+                value_U_estimate = torch.from_numpy(value_U_estimate)
+                value_B_estimate = torch.from_numpy(value_B_estimate)
+                ratio_fairness = value_U_estimate / value_B_estimate
+
+                soft_bias, soft_bias_grad = soft_bias_value_and_gradient(copy.deepcopy(ratio_fairness),self.beta_smooth)
+
+                # estimate the gradient of R_U / R_B
+                policy_loss_U = torch.zeros(self.num_groups)   
+                policy_loss_B = torch.zeros(self.num_groups)  
+                for g in range(self.num_groups):
+                    policy_loss_U[g] = policy_loss[1][g]
+                    policy_loss_B[g] = policy_loss[2][g]
+                policy_loss = policy_loss[0]
+
+                # grad of R_U/R_B w.r.t. pi
+                grad_ratio_U_B = policy_loss_U / value_B_estimate - policy_loss_B * (value_U_estimate/(value_B_estimate**2))
+                
+                bias_loss = 2 * soft_bias * torch.sum(grad_ratio_U_B * soft_bias_grad) * (- self.bias_coef)
+
+                # value loss for all rewards
+                value_loss = value_loss[0] + sum(value_loss[1]) + sum(value_loss[2])
+
                 # final loss
-                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss 
+                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss + bias_loss
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -357,7 +380,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         # Logs
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
 
-        self.logger.record("train/policy_gradient_loss", np.mean(pg_losses)) 
+        self.logger.record("train/policy_gradient_loss", np.mean(pg_losses[0])) 
 
         self.logger.record("train/value_loss", np.mean(value_losses[0])) 
         self.logger.record("train/value_loss_U", np.array([np.mean(array_g) for array_g in value_losses[1]]).mean()) # loss of value_U average acrossed all groups

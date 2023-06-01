@@ -38,7 +38,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     ax1.plot(num_samples,return_arr)
     ax1.set_ylabel('return')
     ax1.set_title('average return / episode_len')
-#     ax1.set_ylim(-10, -4)
+#     ax1.set_ylim(0.1,0.6)
     ax1.grid()
     # benefit
     ax2.plot(num_samples,benefit_max,label='benefit_max')
@@ -53,6 +53,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     ax3.axhline(y=0, color='r', linestyle='-')
     ax3.set_title('Bias')
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
+#     ax3.set_ylim(-0.05,0.2)
     ax3.grid()
     if save:
         fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
@@ -66,3 +67,13 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
 
 # for beta in beta_list:
 #     plot_return_bias(exp_path_base + str(beta) + str('_s_1'),save=False, smooth = 2)
+
+# +
+# exp_path_base = 'EricOrig_lr_1e-5/betaSmooth_5/b_'
+# beta_list = [0,10,50,100,200]
+
+# exp_path_base = 'EricOrig_lr_1e-5/betaSmooth_3/b_'
+# beta_list = [5,10,50,100]
+
+# for beta in beta_list:
+#     plot_return_bias(exp_path_base + str(beta) + str('_s_0'),save=False, smooth = 2)

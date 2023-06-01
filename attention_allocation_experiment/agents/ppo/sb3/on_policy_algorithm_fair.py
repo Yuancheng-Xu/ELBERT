@@ -251,8 +251,6 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                         predicted_values = self.policy.predict_values(terminal_obs)
                         terminal_value = [predicted_values[0][0], [predicted_values[1][g][0] for g in range(self.num_groups)], [predicted_values[2][g][0] for g in range(self.num_groups)]]
                         # terminal_value = self.policy.predict_values(terminal_obs)[0] # original code
-                    for i in range(5):
-                        rewards[i][idx] += self.gamma * terminal_value[i]
 
                     rewards[0][idx] += self.gamma * terminal_value[0]
                     for g in range(self.num_groups):

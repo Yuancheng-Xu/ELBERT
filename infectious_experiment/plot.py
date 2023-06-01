@@ -75,11 +75,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
 #     plot_return_bias(exp_path,save=False,smooth=2)
 
 # +
-# b = 0.5
-# plot_return_bias(exp_path_base + str(b) + '_s_0',save=False,smooth=2)
+# b = 0
+# exp_path_base = 'Chenghao_p_0.2_buffer5000_05_15/lr_1e-5_samples_5e6/b_'
+# plot_return_bias(exp_path_base + str(b) + '_s_2',save=False,smooth=2)
 # plot_return_bias(exp_path_base + str(b) + '_s_1',save=False,smooth=2)
-
-# +
-# b = 1
-# plot_return_bias(exp_path_base + str(b) + '_s_0',save=False,smooth=2)
-# plot_return_bias(exp_path_base + str(b),save=False,smooth=2)

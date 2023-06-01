@@ -2,14 +2,70 @@
 
 trap 'kill 0' SIGINT
 
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 0.0 --exp_path lr_1e-6_samples_5e6/b_0 &
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 10.0 --exp_path lr_1e-6_samples_5e6/b_10 &
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 20.0 --exp_path lr_1e-6_samples_5e6/b_20 &
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 50.0 --exp_path lr_1e-6_samples_5e6/b_50 &
-# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 100 --exp_path lr_1e-6_samples_5e6/b_100 &
-# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 200 --exp_path lr_1e-6_samples_5e6/b_200 &
-# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 400 --exp_path lr_1e-6_samples_5e6/b_400 &
-# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 1000 --exp_path lr_1e-6_samples_5e6/b_1000 
+# s=3
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 3 --bias_coef 0 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_0_s_0 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 3 --bias_coef 5 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_5_s_0 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 3 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_10_s_0 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 3 --bias_coef 20 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_20_s_0 &
+# CUDA_VISIBLE_DEVICES=4 python main_fair.py --beta_smooth 3 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_50_s_0 &
+# CUDA_VISIBLE_DEVICES=5 python main_fair.py --beta_smooth 3 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_100_s_0 &
+# CUDA_VISIBLE_DEVICES=6 python main_fair.py --beta_smooth 3 --bias_coef 200 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_200_s_0 &
+# CUDA_VISIBLE_DEVICES=7 python main_fair.py --beta_smooth 3 --bias_coef 500 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_500_s_0 
+
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 3 --bias_coef 0 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_0_s_1 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 3 --bias_coef 5 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_5_s_1 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 3 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_10_s_1 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 3 --bias_coef 20 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_20_s_1 
+
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 3 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_50_s_1 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 3 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_100_s_1 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 3 --bias_coef 200 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_200_s_1 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 3 --bias_coef 500 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_500_s_1
+
+
+# s=10
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 10 --bias_coef 0 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_0_s_0 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 10 --bias_coef 5 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_5_s_0 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 10 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_10_s_0 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 10 --bias_coef 20 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_20_s_0 
+
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 10 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_50_s_0 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 10 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_100_s_0 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 10 --bias_coef 200 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_200_s_0 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 10 --bias_coef 500 --exp_path EricOrig_lr_1e-5/betaSmooth_10/b_500_s_0
+
+
+
+
+
+
+
+
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 5 --bias_coef 0 --exp_path EricOrig_lr_1e-5/betaSmooth_5/b_0_s_1 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 5 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_5/b_10_s_1 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 5 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_5/b_50_s_1 
+
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 5 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_5/b_100_s_1 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 5 --bias_coef 200 --exp_path EricOrig_lr_1e-5/betaSmooth_5/b_200_s_1 
+
+# s = 3
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --beta_smooth 3 --bias_coef 5 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_5_s_0 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --beta_smooth 3 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_10_s_0 &
+# CUDA_VISIBLE_DEVICES=2 python main_fair.py --beta_smooth 3 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_50_s_0 &
+# CUDA_VISIBLE_DEVICES=3 python main_fair.py --beta_smooth 3 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_100_s_0 & 
+# CUDA_VISIBLE_DEVICES=4 python main_fair.py --beta_smooth 3 --bias_coef 5 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_5_s_1 &
+# CUDA_VISIBLE_DEVICES=5 python main_fair.py --beta_smooth 3 --bias_coef 10 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_10_s_1 &
+# CUDA_VISIBLE_DEVICES=6 python main_fair.py --beta_smooth 3 --bias_coef 50 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_50_s_1 &
+# CUDA_VISIBLE_DEVICES=7 python main_fair.py --beta_smooth 3 --bias_coef 100 --exp_path EricOrig_lr_1e-5/betaSmooth_3/b_100_s_1 
+
+
+
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 0.0 --exp_path lr_1e-5_samples_5e6/b_0 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 10.0 --exp_path lr_1e-5_samples_5e6/b_10 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 20.0 --exp_path lr_1e-5_samples_5e6/b_20 &
+# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 50.0 --exp_path lr_1e-5_samples_5e6/b_50 &
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 100 --exp_path lr_1e-5_samples_5e6/b_100 &
+# CUDA_VISIBLE_DEVICES=0 python main_fair.py --bias_coef 200 --exp_path lr_1e-5_samples_5e6/b_200 &
 
 ## lr 1e-6
 # smooth = 5

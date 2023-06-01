@@ -56,7 +56,7 @@ torch.cuda.empty_cache()
 
 
 
-def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv=False, seed = None):
+def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv=False):
 
     save_dir = f'{exp_dir}/models/'
 
@@ -101,7 +101,8 @@ def train(train_timesteps, env, bias_coef, beta_smooth, lr, exp_dir, modifedEnv=
                     eval_write_path = os.path.join(exp_dir,'eval.csv'),
                     eval_interval = EVAL_INTERVAL,
                     modifedEnv = modifedEnv,
-                    seed = seed)
+                    # seed = seed,
+                    )
 
         shutil.rmtree(exp_dir, ignore_errors=True)
         Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -141,9 +142,10 @@ def main():
     # essential
     parser.add_argument('--bias_coef', type=float, default=0.0)
     parser.add_argument('--beta_smooth', type=float, default=5.0)
-    parser.add_argument('--lr', type=float, default=1e-6) # Eric: 1e-5
+    parser.add_argument('--lr', type=float, default=1e-5) # Eric: 1e-5
     parser.add_argument('--train_timesteps', type=int, default=5e6) 
-    parser.add_argument('--seed', type=int, default=123)
+    # parser.add_argument('--seed', type=int, default=123)
+
     # evaluation
     parser.add_argument('--exp_path', type=str, default='debug/') # experiment result path exp_dir will be EXP_DIR/exp_path
 
@@ -178,7 +180,7 @@ def main():
     if args.train:
         
         train(train_timesteps=args.train_timesteps, env=env, bias_coef = args.bias_coef, beta_smooth = args.beta_smooth,\
-              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv, seed = args.seed)
+              lr=args.lr, exp_dir=exp_dir, modifedEnv = args.modifedEnv)
 
         # plot evaluation
         plot_return_bias(args.exp_path,smooth=2)

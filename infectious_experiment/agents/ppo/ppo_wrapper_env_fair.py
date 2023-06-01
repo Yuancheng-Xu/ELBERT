@@ -121,6 +121,7 @@ class PPOEnvWrapper_fair(gym.Wrapper):
                 r_B[comm_i] += 1
 
         # if reward_fn is InfectiousReward_fair:
+        assert ZETA_1 == 0, 'ZETA_1>0: Are you sure you are running RPPO? If yes, comment this line'
         if 'fair' in str(self.reward_fn):
             r = self.reward_fn(health_states=self.env.state.health_states)
         # if reward_fn is the same as Eric's
