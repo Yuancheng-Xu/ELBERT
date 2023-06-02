@@ -6,7 +6,7 @@ from gym import spaces
 from attention_allocation_experiment.config_fair import EP_TIMESTEPS, OBS_HIST_LEN, ZETA_0, ZETA_1
 from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
 
-DELTA_NOT_INCLUDE = True # default: true, not include the ratio "delta" in the obs space
+DELTA_NOT_INCLUDE = False # default: true, not include the ratio "delta" in the obs space
 
 class PPOEnvWrapper_fair(gym.Wrapper):
   '''
