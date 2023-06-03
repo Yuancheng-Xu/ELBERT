@@ -22,7 +22,7 @@ from yaml import full_load
 
 import sys
 # sys.path.append('..')
-sys.path.insert(1, '/cmlscratch/xic/FairRL/')
+sys.path.insert(1, '/cmlscratch/xic/FairRL_new/')
 
 from lending_experiment.agents.human_designed_policies import oracle_lending_agent
 from lending_experiment.agents.human_designed_policies.classifier_agents import ScoringAgentParams

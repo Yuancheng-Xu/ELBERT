@@ -19,8 +19,6 @@ from stable_baselines3.common.type_aliases import GymObs
 # for evaluation
 from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
-from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
-from attention_allocation_experiment.config_fair import ZETA_0, ZETA_1
 import numpy as np
 import torch
 # import tqdm
@@ -120,99 +118,61 @@ class Monitor_fair(Monitor):
         :return:
         """
         return self.episode_returns
- 
 
 def evaluate_fair(env, agent, num_eps):
     '''
-    env: should be the one with fairness reward signals
+    A general function to evaluate the reward and fairness of a policy
+    env: should be the one with fairness reward signals (supply and demand)
     num_eps: number of episodes
-    write_path: add data recording to path
 
-    write to disk the evaluation results 
+    Note that bias is computed using the supply and demand of the env, not using specific env's states (such as "incident_seen")
+
+    return:
     1. reward
     2. bias
-
-    TODO: need to do sanity check: whether r_U is equal to some function of the original evaluation
     '''
     assert isinstance(agent, ActorCriticPolicy_fair), 'evaluate_fair only works for ActorCriticPolicy_fair policy'
-    assert isinstance(env, PPOEnvWrapper_fair), 'env should be of type: PPOEnvWrapper_fair'
+    assert isinstance(env, PPOEnvWrapper_fair), 'env should be of type: PPOEnvWrapper_fair and should not be vectorized here'
 
     num_groups = env.state.params.n_locations
     seeds = [random.randint(0, 10000) for _ in range(num_eps)]
     num_timesteps = env.ep_timesteps # number of steps per episodes (unless done=True) 
 
-    reward_fn = AttentionAllocationReward_fair()
+    agent.set_training_mode(False)
 
-    eval_data = {
-        # helper variables
-        'tot_rews': np.zeros((num_eps, num_timesteps)),  # The rewards per timestep per episode
-        'tot_att_all': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep per episode
-        'tot_true_rates': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep per episode
-        'tot_incidents_seen': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep per episode
-        'tot_incidents_occurred': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep per episode
-        'tot_incidents_missed': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents missed per site per timestep per episode
-        # 'tot_rew_infos': []  # The values of each term in the reward per timestep per episode, shape is (num_eps, num_timesteps, dict)
-    }
+    rewards_all = np.zeros((num_eps, num_timesteps))
+    U_all = np.zeros((num_eps, num_groups, num_timesteps))
+    B_all = np.zeros((num_eps, num_groups, num_timesteps))
+
 
     for ep in range(num_eps):
         random.seed(seeds[ep])
         np.random.seed(seeds[ep])
         torch.manual_seed(seeds[ep])
 
-        ep_data = {
-            'rews': np.zeros(num_timesteps),  # The reward per timestep of this episode
-            'att_all': np.zeros((num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep of this episode
-            'true_rates': np.zeros((num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep of this episode
-            # 'deltas': np.zeros(num_timesteps),  # The deltas per timestep of this episode
-            'ep_incidents_seen': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep of this episode
-            'ep_incidents_occurred': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep of this episode
-            # 'rew_infos': [],  # The values of each term in the reward per timestep of this episode
-        }
-
         obs = env.reset()
         done = False
         # print(f'Evaluation:  Episode {ep}:')
         # for t in tqdm.trange(num_timesteps):
-
         for t in range(num_timesteps):
-            action = agent.predict(obs)[0]
+            with torch.no_grad():
+                action = agent.predict(obs)[0]
 
-            obs, _, done, _ = env.step(action)
+            obs, r, done, _ = env.step(action) # reward is a "Fairness List"
 
-            # Update total incidents variables
-            ep_data['ep_incidents_seen'][t] = env.state.incidents_seen
-            ep_data['ep_incidents_occurred'][t] = env.state.incidents_occurred
-
-            r = reward_fn(incidents_seen=env.state.incidents_seen,
-                          incidents_occurred=env.state.incidents_occurred,
-                          zeta0=ZETA_0,
-                          zeta1=ZETA_1)
-            
-
-            # ep_data['rew_infos'].append(reward_fn.rew_info)
-            ep_data['rews'][t] = r
-            ep_data['att_all'][t] = env.process_action(action) 
-            ep_data['true_rates'][t] = env.state.params.incident_rates
-            # ep_data['deltas'][t] = reward_fn.calc_delta(ep_incidents_seen=ep_data['ep_incidents_seen'],
-            #                                             ep_incidents_occurred=ep_data['ep_incidents_occurred'])
+            rewards_all[ep][t] = r[0]
+            for g in range(num_groups):
+                U_all[ep][g][t] = r[1][g]
+                B_all[ep][g][t] = r[2][g]
 
             if done:
                 break
 
-        # Store the episodic data in eval data
-        eval_data['tot_rews'][ep] = ep_data['rews']
-        eval_data['tot_att_all'][ep] = ep_data['att_all']
-        eval_data['tot_true_rates'][ep] = ep_data['true_rates']
-        eval_data['tot_incidents_seen'][ep] = ep_data['ep_incidents_seen']
-        eval_data['tot_incidents_occurred'][ep] = ep_data['ep_incidents_occurred']
-        eval_data['tot_incidents_missed'][ep] = ep_data['ep_incidents_occurred'] - ep_data['ep_incidents_seen']
-        # eval_data['tot_rew_infos'].append(copy.deepcopy(ep_data['rew_infos']))
-
-    U = np.sum(eval_data['tot_incidents_seen'],axis=(0,1))
-    B = np.sum(eval_data['tot_incidents_occurred'],axis=(0,1)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
+    U = np.sum(U_all,axis=(0,2))
+    B = np.sum(B_all,axis=(0,2)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
     # essential (only write these to disk): average across episodes and timesteps
     eval_data_essential = {}
-    eval_data_essential['return'] = eval_data['tot_rews'].mean() # average across episodes and timesteps
+    eval_data_essential['return'] = rewards_all.mean() # average across episodes and timesteps
     ratio_list = []
     for g in range(num_groups):
         eval_data_essential['ratio_{}'.format(g)] = U[g]/B[g]
@@ -222,3 +182,109 @@ def evaluate_fair(env, agent, num_eps):
     eval_data_essential['benefit_min'] = min(ratio_list)
 
     return eval_data_essential
+
+
+
+
+# the following: original version, specific to each environment (for example, it uses "incident_seen")
+# from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
+# def evaluate_fair_old(env, agent, num_eps):
+#     '''
+#     env: should be the one with fairness reward signals
+#     num_eps: number of episodes
+#     write_path: add data recording to path
+
+#     write to disk the evaluation results 
+#     1. reward
+#     2. bias
+#     '''
+#     ZETA_0 = 1
+#     ZETA_1 = 0.25
+#     assert isinstance(agent, ActorCriticPolicy_fair), 'evaluate_fair only works for ActorCriticPolicy_fair policy'
+#     assert isinstance(env, PPOEnvWrapper_fair), 'env should be of type: PPOEnvWrapper_fair'
+
+#     num_groups = env.state.params.n_locations
+#     seeds = [random.randint(0, 10000) for _ in range(num_eps)]
+#     num_timesteps = env.ep_timesteps # number of steps per episodes (unless done=True) 
+
+#     reward_fn = AttentionAllocationReward_fair()
+
+#     eval_data = {
+#         # helper variables
+#         'tot_rews': np.zeros((num_eps, num_timesteps)),  # The rewards per timestep per episode
+#         'tot_att_all': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep per episode
+#         'tot_true_rates': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep per episode
+#         'tot_incidents_seen': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep per episode
+#         'tot_incidents_occurred': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep per episode
+#         'tot_incidents_missed': np.zeros((num_eps, num_timesteps, env.state.params.n_locations)),  # The incidents missed per site per timestep per episode
+#         # 'tot_rew_infos': []  # The values of each term in the reward per timestep per episode, shape is (num_eps, num_timesteps, dict)
+#     }
+
+#     for ep in range(num_eps):
+#         random.seed(seeds[ep])
+#         np.random.seed(seeds[ep])
+#         torch.manual_seed(seeds[ep])
+
+#         ep_data = {
+#             'rews': np.zeros(num_timesteps),  # The reward per timestep of this episode
+#             'att_all': np.zeros((num_timesteps, env.state.params.n_locations)),  # The attention allocated per site per timestep of this episode
+#             'true_rates': np.zeros((num_timesteps, env.state.params.n_locations)),  # The true rates per site per timestep of this episode
+#             # 'deltas': np.zeros(num_timesteps),  # The deltas per timestep of this episode
+#             'ep_incidents_seen': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents seen per site per timestep of this episode
+#             'ep_incidents_occurred': np.zeros((num_timesteps, env.state.params.n_locations)),  # The incidents occurred per site per timestep of this episode
+#             # 'rew_infos': [],  # The values of each term in the reward per timestep of this episode
+#         }
+
+#         obs = env.reset()
+#         done = False
+#         # print(f'Evaluation:  Episode {ep}:')
+#         # for t in tqdm.trange(num_timesteps):
+
+#         for t in range(num_timesteps):
+#             action = agent.predict(obs)[0]
+
+#             obs, _, done, _ = env.step(action)
+
+#             # Update total incidents variables
+#             ep_data['ep_incidents_seen'][t] = env.state.incidents_seen
+#             ep_data['ep_incidents_occurred'][t] = env.state.incidents_occurred
+
+#             r = reward_fn(incidents_seen=env.state.incidents_seen,
+#                           incidents_occurred=env.state.incidents_occurred,
+#                           zeta0=ZETA_0,
+#                           zeta1=ZETA_1)
+            
+
+#             # ep_data['rew_infos'].append(reward_fn.rew_info)
+#             ep_data['rews'][t] = r
+#             ep_data['att_all'][t] = env.process_action(action) 
+#             ep_data['true_rates'][t] = env.state.params.incident_rates
+#             # ep_data['deltas'][t] = reward_fn.calc_delta(ep_incidents_seen=ep_data['ep_incidents_seen'],
+#             #                                             ep_incidents_occurred=ep_data['ep_incidents_occurred'])
+
+#             if done:
+#                 break
+
+#         # Store the episodic data in eval data
+#         eval_data['tot_rews'][ep] = ep_data['rews']
+#         eval_data['tot_att_all'][ep] = ep_data['att_all']
+#         eval_data['tot_true_rates'][ep] = ep_data['true_rates']
+#         eval_data['tot_incidents_seen'][ep] = ep_data['ep_incidents_seen']
+#         eval_data['tot_incidents_occurred'][ep] = ep_data['ep_incidents_occurred']
+#         eval_data['tot_incidents_missed'][ep] = ep_data['ep_incidents_occurred'] - ep_data['ep_incidents_seen']
+#         # eval_data['tot_rew_infos'].append(copy.deepcopy(ep_data['rew_infos']))
+
+#     U = np.sum(eval_data['tot_incidents_seen'],axis=(0,1))
+#     B = np.sum(eval_data['tot_incidents_occurred'],axis=(0,1)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
+#     # essential (only write these to disk): average across episodes and timesteps
+#     eval_data_essential = {}
+#     eval_data_essential['return'] = eval_data['tot_rews'].mean() # average across episodes and timesteps
+#     ratio_list = []
+#     for g in range(num_groups):
+#         eval_data_essential['ratio_{}'.format(g)] = U[g]/B[g]
+#         ratio_list.append(U[g]/B[g])
+#     eval_data_essential['bias'] = max(ratio_list) - min(ratio_list)
+#     eval_data_essential['benefit_max'] = max(ratio_list)
+#     eval_data_essential['benefit_min'] = min(ratio_list)
+
+#     return eval_data_essential

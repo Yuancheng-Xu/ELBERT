@@ -1,6 +1,6 @@
 """Policies: abstract base class and concrete implementations.
 Original code from stable_baselines3.common.policies: https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/policies.html
-xyc Warning: this is from the latest sb3. 
+Warning: this is from the latest sb3. 
 In Eric paper, an older stablebaseline is used, where net_arch can specified shared structure
 (such as net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])) with 256,256 is shared, where here it cannot (so  net_arch = [dict(vf=..., pi=...)))
 To run xyc project on Eric'c computer enviroment, the whole super classes of ActorCritic class in the latest sb3 are copied here. 

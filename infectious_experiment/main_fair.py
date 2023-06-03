@@ -19,7 +19,7 @@ from stable_baselines3.common.logger import configure
 # from networkx.algorithms import community
 
 import sys
-sys.path.insert(1, '/cmlscratch/xic/FairRL/')
+sys.path.insert(1, '/cmlscratch/xic/FairRL_new/')
 
 from infectious_experiment.config_fair import INFECTION_PROBABILITY, INFECTED_EXIT_PROBABILITY, NUM_TREATMENTS, BURNIN, \
     EXP_DIR, POLICY_KWARGS_fair, SAVE_FREQ, GRAPH_NAME, EVAL_INTERVAL

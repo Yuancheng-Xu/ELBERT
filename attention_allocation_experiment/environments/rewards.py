@@ -29,7 +29,9 @@ import torch
 
 import numpy as np
 
-from attention_allocation_experiment.config import OMEGA
+# from attention_allocation_experiment.config import OMEGA
+OMEGA = 0.05
+
 from attention_allocation_experiment.environments import core
 
 
@@ -199,45 +201,47 @@ class AttentionAllocationReward(core.RewardFn):
     return tot_rew
   
 
-class AttentionAllocationReward_fair(core.RewardFn):
-  """
-  Computes r(s_t) defined in the attention allocation experiments section of the paper
 
-  TODO: xyc: I am not sure what "max_incidents_seen_sum" is used for. Can be removed later
-  """
-  # def __init__(self):
-    # Max number of incidents seen.
-    # self.max_incidents_seen_sum = -np.inf
+# should be removed!
+# class AttentionAllocationReward_fair(core.RewardFn):
+#   """
+#   Computes r(s_t) defined in the attention allocation experiments section of the paper
 
-  def __call__(self,
-               incidents_seen,
-               incidents_occurred,
-              #  ep_incidents_seen,
-              #  ep_incidents_occurred,
-               zeta0,
-               zeta1):
+#   TODO: xyc: I am not sure what "max_incidents_seen_sum" is used for. Can be removed later
+#   """
+#   # def __init__(self):
+#     # Max number of incidents seen.
+#     # self.max_incidents_seen_sum = -np.inf
 
-    # Reset max_incidents_seen if needed
-    # if len(ep_incidents_seen) <= 1:
-    #   self.max_incidents_seen_sum = -np.inf
+#   def __call__(self,
+#                incidents_seen,
+#                incidents_occurred,
+#               #  ep_incidents_seen,
+#               #  ep_incidents_occurred,
+#                zeta0,
+#                zeta1):
 
-    # Update max incidents seen in current episode
-    # if np.sum(incidents_seen) > self.max_incidents_seen_sum:
-    #   self.max_incidents_seen_sum = np.sum(incidents_seen)
+#     # Reset max_incidents_seen if needed
+#     # if len(ep_incidents_seen) <= 1:
+#     #   self.max_incidents_seen_sum = -np.inf
 
-    # Compute incidents missed
-    incidents_missed = incidents_occurred - incidents_seen
+#     # Update max incidents seen in current episode
+#     # if np.sum(incidents_seen) > self.max_incidents_seen_sum:
+#     #   self.max_incidents_seen_sum = np.sum(incidents_seen)
 
-    incidents_seen_term = zeta0 * np.sum(incidents_seen)
-    incidents_missed_term = -zeta1 * np.sum(incidents_missed)
+#     # Compute incidents missed
+#     incidents_missed = incidents_occurred - incidents_seen
 
-    # Compute modified reward from attention allocation environment
-    tot_rew = incidents_seen_term + incidents_missed_term 
+#     incidents_seen_term = zeta0 * np.sum(incidents_seen)
+#     incidents_missed_term = -zeta1 * np.sum(incidents_missed)
 
-    self.rew_info = {
-      'incidents_seen_term': incidents_seen_term,
-      'incidents_missed_term': incidents_missed_term,
-      'tot_rew': tot_rew
-    }
+#     # Compute modified reward from attention allocation environment
+#     tot_rew = incidents_seen_term + incidents_missed_term 
 
-    return tot_rew
+#     self.rew_info = {
+#       'incidents_seen_term': incidents_seen_term,
+#       'incidents_missed_term': incidents_missed_term,
+#       'tot_rew': tot_rew
+#     }
+
+#     return tot_rew

@@ -13,7 +13,9 @@
                   "justMyCode": true,
 
                   "args": [
-                        "--algorithm", "ppo", "--modifedEnv"
+                        "--algorithm", "ours",
+                        "--train_timesteps", "10000",
+                        "--exp_path_extra", "_debug",
                   ]
             }
       ]

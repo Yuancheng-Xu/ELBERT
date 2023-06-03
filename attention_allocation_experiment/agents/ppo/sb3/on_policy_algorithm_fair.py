@@ -1,38 +1,35 @@
+'''
+The OnPolicyALgorithm_fair class here:
+1. the reward (also advantage, etc) is of the form  [r, [r_U_0,..],[r_B_0,..]]
+2. The policy is of the type ActorCriticPolicy_fair, which can predict the values of all fairness signals
+Note that APPO, GPPO, RPPO also use such architecture, although they do not need to predict fairness reward signals 
+(so they become unnecessarily more expensive)
+'''
+
 import time
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
-import torch
 import torch as th
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-# from stable_baselines3.common.buffers import DictRolloutBuffer  
 from stable_baselines3.common.callbacks import BaseCallback
-# from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy      
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv # though we use our own vec_env, here it is only for type checking
-
-# fairness specific
-from attention_allocation_experiment.agents.ppo.sb3.buffers_fair import RolloutBuffer_fair
-from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair, BasePolicy
-
-# create env for evaluation 
-from attention_allocation_experiment.agents.ppo.sb3.utils_fair import evaluate_fair
-from attention_allocation_experiment.config_fair import N_LOCATIONS, INCIDENT_RATES, N_ATTENTION_UNITS, DYNAMIC_RATE,\
-    EVAL_NUM_EPS,EP_TIMESTEPS_EVAL
-from attention_allocation_experiment.environments.attention_allocation import LocationAllocationEnv, Params
-from attention_allocation_experiment.environments.rewards import AttentionAllocationReward_fair
-from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 
 # for writing evaluation results to disk
 import pandas as pd 
 import os
 
-# Chenghao's env
-from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
+# fairness specific
+from attention_allocation_experiment.agents.ppo.sb3.buffers_fair import RolloutBuffer_fair
+from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair, BasePolicy
+
+# for evaluation
+from attention_allocation_experiment.agents.ppo.sb3.utils_fair import evaluate_fair
 
 
 class OnPolicyAlgorithm_fair(BaseAlgorithm):
@@ -76,7 +73,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         policy: Union[str, Type[ActorCriticPolicy_fair]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule],
-        n_steps: int,                                     # buffer_size (yes?)
+        n_steps: int,                                     # buffer_size 
         gamma: float,
         gae_lambda: float,
         ent_coef: float,
@@ -95,9 +92,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
 
-        eval_write_path: str = None,
-        eval_interval: int = None, # evaluate every eval_interval times of rollout
-        modifedEnv: bool = None, # chenghao's modified env
+        eval_kwargs: dict = None, # args for evaluation (env_eval,  eval_write_path, eval_interval, etc)
     ):
         
         super(OnPolicyAlgorithm_fair, self).__init__(
@@ -117,8 +112,6 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             supported_action_spaces=supported_action_spaces,
         )
 
-        self.modifedEnv = modifedEnv # will remove after the env is settled down
-
         self.num_groups = env.num_groups # during training, env is a DummyVecEnv_fair object, which has self.num_groups
 
         self.n_steps = n_steps
@@ -129,8 +122,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
         # for eval
-        self.eval_write_path = eval_write_path
-        self.eval_interval = eval_interval
+        self.eval_kwargs = eval_kwargs
 
         if _init_setup_model:
             self._setup_model()
@@ -141,11 +133,8 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
 
         # buffer_cls = DictRolloutBuffer if isinstance(self.observation_space, gym.spaces.Dict) else RolloutBuffer_fair # original code
         buffer_cls = RolloutBuffer_fair
-        # test
         if isinstance(self.observation_space, gym.spaces.Dict):
             raise ValueError('Using DictRolloutBuffer from sb3; Why? Then need to rewrite their buffer too?')
-        else:
-            print('Using RolloutBuffer_fair frorm agents.ppo.sb3.buffers_fair')
 
         self.rollout_buffer = buffer_cls(
             self.n_steps,
@@ -172,7 +161,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         env: VecEnv,
         callback: BaseCallback,
         rollout_buffer: RolloutBuffer_fair,
-        n_rollout_steps: int,               # buffer size (yes?)
+        n_rollout_steps: int,               
     ) -> bool:
         """
         Collect experiences using the current policy and fill a ``RolloutBuffer``.
@@ -219,7 +208,6 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             if isinstance(self.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
-
             new_obs, rewards, dones, infos = env.step(clipped_actions) # rewards is a "fairness List"
 
             self.num_timesteps += env.num_envs
@@ -258,7 +246,10 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                         rewards[2][g][idx] += self.gamma * terminal_value[2][g]
                     # rewards[idx] += self.gamma * terminal_value # original code
 
-            rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
+            # only for APPO
+            delta = th.tensor(env.get_attr('delta'))
+            delta_delta = th.tensor(env.get_attr('delta_delta'))
+            rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs, delta, delta_delta)
             self._last_obs = new_obs
             self._last_episode_starts = dones
 
@@ -299,6 +290,12 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
             self.num_timesteps += n_rollout_steps
             self.train() is called once
         '''
+        # args for eval
+        eval_write_path = os.path.join(self.eval_kwargs['eval_write_path'],'eval.csv')
+        eval_interval = self.eval_kwargs['eval_interval']
+        env_eval = self.eval_kwargs['env_eval']
+        num_eps_eval = self.eval_kwargs['num_eps_eval']
+
         iteration = 0
 
         total_timesteps, callback = self._setup_learn(
@@ -312,33 +309,24 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         while self.num_timesteps < total_timesteps:
 
             ### evaluation
-            if self.eval_interval is not None and (iteration) % self.eval_interval == 0:
+            if eval_interval is not None and (iteration) % eval_interval == 0:
                 self.policy.set_training_mode(False)
-                if self.modifedEnv:
-                    print('Evaluation: Using Chenghao\'s modified env')
-                    env_eval = create_GeneralLocationAllocationEnv()
-                else:
-                    # new env for eval
-                    env_params = Params(
-                        n_locations=N_LOCATIONS,
-                        prior_incident_counts=tuple(500 for _ in range(N_LOCATIONS)),
-                        incident_rates=INCIDENT_RATES,
-                        n_attention_units=N_ATTENTION_UNITS, 
-                        miss_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-                        extra_incident_prob=tuple(0. for _ in range(N_LOCATIONS)),
-                        dynamic_rate=DYNAMIC_RATE)
-                    env_eval = LocationAllocationEnv(params=env_params)
-                env_eval=PPOEnvWrapper_fair(env=env_eval, reward_fn=AttentionAllocationReward_fair,ep_timesteps=EP_TIMESTEPS_EVAL) 
+                
                 # evaluate and write to disk
-                eval_data = evaluate_fair(env_eval, self.policy, num_eps=EVAL_NUM_EPS)
+                eval_data = evaluate_fair(env_eval, self.policy, num_eps=num_eps_eval)
                 eval_data['num_timesteps'] = self.num_timesteps
                 eval_data['time_elapsed'] = str(timedelta(seconds=time.time() - eval_time_flag)) if eval_time_flag is not None else str(0)
                 df_eval = pd.DataFrame([eval_data], columns=eval_data.keys())
-                df_eval.to_csv(self.eval_write_path , mode='a', header=not os.path.exists(self.eval_write_path))            
+                df_eval.to_csv(eval_write_path , mode='a', header=not os.path.exists(eval_write_path))            
             
                 eval_time_flag = time.time()
 
 
+                ### test whether match the original evaluation: test several eval interval!
+                # from attention_allocation_experiment.agents.ppo.sb3.utils_fair import evaluate_fair_old
+                # eval_data_old = evaluate_fair_old(env_eval, self.policy, num_eps=num_eps_eval)
+                # print(eval_data, '\n', eval_data_old)
+                ### end test
 
             continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
@@ -382,4 +370,3 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         state_dicts = ["policy", "policy.optimizer"]
 
         return state_dicts, []
-    

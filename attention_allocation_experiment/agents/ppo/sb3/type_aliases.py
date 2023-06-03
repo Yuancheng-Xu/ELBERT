@@ -23,60 +23,65 @@ Schedule = Callable[[float], float]
 class RolloutBufferSamples_fair(NamedTuple):
     observations: th.Tensor
     actions: th.Tensor
-    old_values: List[th.Tensor]
+    old_values: List[th.Tensor] # [r, [r_U_0,..],[r_B_0,..]]
     old_log_prob: th.Tensor
     advantages: List[th.Tensor]
     returns: List[th.Tensor]
 
+    deltas: th.Tensor   # only used by APPO
+    delta_deltas: th.Tensor # only used by APPO
+
 # below are from Eric
 
-class RolloutBufferSamples(NamedTuple):
-    observations: th.Tensor
-    actions: th.Tensor
-    old_values: th.Tensor
-    old_log_prob: th.Tensor
-    advantages: th.Tensor
-    returns: th.Tensor
-    deltas: th.Tensor
-    delta_deltas: th.Tensor
+# class RolloutBufferSamples(NamedTuple):
+#     observations: th.Tensor
+#     actions: th.Tensor
+#     old_values: th.Tensor
+#     old_log_prob: th.Tensor
+#     advantages: th.Tensor
+#     returns: th.Tensor
+#     deltas: th.Tensor   # only used by APPO
+#     delta_deltas: th.Tensor # only used by APPO
 
 
-class DictRolloutBufferSamples(RolloutBufferSamples):
-    observations: TensorDict
-    actions: th.Tensor
-    old_values: th.Tensor
-    old_log_prob: th.Tensor
-    advantages: th.Tensor
-    returns: th.Tensor
+# class DictRolloutBufferSamples(RolloutBufferSamples):
+#     observations: TensorDict
+#     actions: th.Tensor
+#     old_values: th.Tensor
+#     old_log_prob: th.Tensor
+#     advantages: th.Tensor
+#     returns: th.Tensor
 
 
-class ReplayBufferSamples(NamedTuple):
-    observations: th.Tensor
-    actions: th.Tensor
-    next_observations: th.Tensor
-    dones: th.Tensor
-    rewards: th.Tensor
+# class ReplayBufferSamples(NamedTuple):
+#     observations: th.Tensor
+#     actions: th.Tensor
+#     next_observations: th.Tensor
+#     dones: th.Tensor
+#     rewards: th.Tensor
 
 
-class DictReplayBufferSamples(ReplayBufferSamples):
-    observations: TensorDict
-    actions: th.Tensor
-    next_observations: th.Tensor
-    dones: th.Tensor
-    rewards: th.Tensor
+# class DictReplayBufferSamples(ReplayBufferSamples):
+#     observations: TensorDict
+#     actions: th.Tensor
+#     next_observations: th.Tensor
+#     dones: th.Tensor
+#     rewards: th.Tensor
 
 
-class RolloutReturn(NamedTuple):
-    episode_timesteps: int
-    n_episodes: int
-    continue_training: bool
+# class RolloutReturn(NamedTuple):
+#     episode_timesteps: int
+#     n_episodes: int
+#     continue_training: bool
 
 
-class TrainFrequencyUnit(Enum):
-    STEP = "step"
-    EPISODE = "episode"
+# Below: Not used anywhere
+
+# class TrainFrequencyUnit(Enum):
+#     STEP = "step"
+#     EPISODE = "episode"
 
 
-class TrainFreq(NamedTuple):
-    frequency: int
-    unit: TrainFrequencyUnit  # either "step" or "episode"
+# class TrainFreq(NamedTuple):
+#     frequency: int
+#     unit: TrainFrequencyUnit  # either "step" or "episode"

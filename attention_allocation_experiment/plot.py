@@ -8,13 +8,10 @@ import pandas as pd
 # for smoothing
 from scipy.ndimage.filters import gaussian_filter1d
 
-from attention_allocation_experiment.config_fair import EXP_DIR
-
-
 def plot_return_bias(exp_path, save=True, smooth=-1):
     
     # read data
-    data_pth  = os.path.join(EXP_DIR,exp_path,'eval.csv') 
+    data_pth  = os.path.join(exp_path,'eval.csv') 
     data = pd.read_csv(data_pth, sep=',', header=0)
     
     # to numpy
@@ -56,7 +53,7 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
 #     ax3.set_ylim(-0.05,0.2)
     ax3.grid()
     if save:
-        fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+        fig.savefig(os.path.join(exp_path,'result.png'))
     else:
         fig.show()
 

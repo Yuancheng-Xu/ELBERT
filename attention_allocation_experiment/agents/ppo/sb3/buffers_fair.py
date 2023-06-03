@@ -1,3 +1,8 @@
+'''
+The buffer in the file is a standard RL buffer with two additional components
+1. Supply (U) and demand (B) "rewards". The buffer.reward is now [r, [r_U_0,..],[r_B_0,..]]
+2. (Only for APPO) deltas and delta_deltas. They will NOT be used by other algorithms
+'''
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Union
@@ -9,12 +14,7 @@ from gym import spaces
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
 from stable_baselines3.common.vec_env import VecNormalize
 
-from agents.ppo.sb3.type_aliases import (
-    # DictReplayBufferSamples,
-    # DictRolloutBufferSamples,
-    ReplayBufferSamples,
-    RolloutBufferSamples_fair,
-)
+from attention_allocation_experiment.agents.ppo.sb3.type_aliases import RolloutBufferSamples_fair
 
 try:
     # Check memory used by replay buffer when possible
@@ -63,7 +63,7 @@ class BaseBuffer(ABC):
         :param arr:
         :return:
         """
-        raise ValueError('We should not use this function in fairness setting. Use swap_and_flatten_fair() instead')
+        raise ValueError('We should not use this function in the fairness setting. Use swap_and_flatten_fair() instead')
         shape = arr.shape
         if len(shape) < 3:
             shape = shape + (1,)
@@ -112,7 +112,7 @@ class BaseBuffer(ABC):
     @abstractmethod
     def _get_samples(
         self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> Union[ReplayBufferSamples, RolloutBufferSamples_fair]:
+    ) -> RolloutBufferSamples_fair:
         """
         :param batch_inds:
         :param env:
@@ -160,7 +160,6 @@ class BaseBuffer(ABC):
             return env.normalize_reward(reward).astype(np.float32)
         return reward
 
-
 class RolloutBuffer_fair(BaseBuffer):
     """
     Rollout buffer used in on-policy algorithms like A2C/PPO.
@@ -183,7 +182,7 @@ class RolloutBuffer_fair(BaseBuffer):
 
     modification from the previous version:
     1. dealing with 2*M + 1 reward, which involves return, advantage. The order is: r_main, r_U: List, r_B: List
-    2. get rid of "delta = tpr difference" in Eric's paper
+    We keep the "deltas = tpr difference" and delta_deltas in Eric's paper
     """
 
     def __init__(
@@ -213,6 +212,11 @@ class RolloutBuffer_fair(BaseBuffer):
         self.advantages = [None, [None for i in range(self.num_groups)], [None for i in range(self.num_groups)]]
 
         self.generator_ready = False
+
+        # Only for APPO
+        self.deltas = None
+        self.delta_deltas = None
+        
         self.reset()
 
     def reset(self) -> None:
@@ -235,9 +239,14 @@ class RolloutBuffer_fair(BaseBuffer):
                 self.advantages[i] = [np.zeros((self.buffer_size, self.n_envs), dtype=np.float32) for g in range(self.num_groups)]
         
         self.generator_ready = False
+        
+        # Only for APPO
+        self.deltas = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.delta_deltas = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+
         super(RolloutBuffer_fair, self).reset()
 
-    def compute_returns_and_advantage(self, last_values: List[th.Tensor], dones: np.ndarray) -> None:
+    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """
         Post-processing step: compute the lambda-return (TD(lambda) estimate)
         and GAE(lambda) advantage.
@@ -263,7 +272,7 @@ class RolloutBuffer_fair(BaseBuffer):
         last_values[0] = last_values[0].clone().cpu().numpy().flatten()
         last_values[1] = [i.clone().cpu().numpy().flatten() for i in last_values[1]]
         last_values[2] = [i.clone().cpu().numpy().flatten() for i in last_values[2]]
-        
+
         last_gae_lam = [0, [0 for i in range(self.num_groups)], [0 for i in range(self.num_groups)]]
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
@@ -271,17 +280,16 @@ class RolloutBuffer_fair(BaseBuffer):
                 next_values = last_values
             else:
                 next_non_terminal = 1.0 - self.episode_starts[step + 1]
-                next_values = [self.values[0][step + 1], [self.values[1][i][step + 1] for i in range(self.num_groups)], [self.values[2][i][step + 1] for i in range(self.num_groups)]]  
+                next_values = [self.values[0][step + 1], [self.values[1][g][step + 1] for g in range(self.num_groups)], [self.values[2][g][step + 1] for g in range(self.num_groups)]]  
             
             for i in range(3):
                 if i == 0:
                     delta = self.rewards[i][step] + self.gamma * next_values[i] * next_non_terminal - self.values[i][step]
                     last_gae_lam[i] = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam[i]
                 else:
-                    for g in range(self.num_groups):
-                        delta = [(self.rewards[i][g][step] + self.gamma * next_values[i][g] * next_non_terminal - self.values[i][g][step]) for g in range(self.num_groups)]
-                        last_gae_lam[i] = [(delta[g] + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam[i][g]) for g in range(self.num_groups)]
-
+                    delta = [(self.rewards[i][g][step] + self.gamma * next_values[i][g] * next_non_terminal - self.values[i][g][step]) for g in range(self.num_groups)]
+                    last_gae_lam[i] = [(delta[g] + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam[i][g]) for g in range(self.num_groups)]
+            
             self.advantages[0][step] = last_gae_lam[0]
             for g in range(self.num_groups):
                 self.advantages[1][g][step] = last_gae_lam[1][g]
@@ -297,10 +305,12 @@ class RolloutBuffer_fair(BaseBuffer):
         self,
         obs: np.ndarray,
         action: np.ndarray,
-        reward: List[np.ndarray],
+        reward: np.ndarray,
         episode_start: np.ndarray,
-        value: List[th.Tensor],
-        log_prob: th.Tensor
+        value: th.Tensor,
+        log_prob: th.Tensor,
+        deltas: th.Tensor,
+        delta_deltas: th.Tensor
 
     ) -> None:
         """
@@ -321,7 +331,7 @@ class RolloutBuffer_fair(BaseBuffer):
         # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
         if isinstance(self.observation_space, spaces.Discrete):
             obs = obs.reshape((self.n_envs,) + self.obs_shape)
-
+        
         self.rewards[0][self.pos] = np.array(reward[0]).copy()
         self.values[0][self.pos] = value[0].clone().cpu().numpy().flatten()
         for g in range(self.num_groups):
@@ -334,11 +344,15 @@ class RolloutBuffer_fair(BaseBuffer):
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.episode_starts[self.pos] = np.array(episode_start).copy()
-        self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
-        
+        self.log_probs[self.pos] = log_prob.clone().cpu().numpy()        
+        # only for APPO
+        self.deltas[self.pos] = deltas.clone().cpu().numpy()
+        self.delta_deltas[self.pos] = delta_deltas.clone().cpu().numpy()
+
         self.pos += 1
+
         if self.pos == self.buffer_size:
-            self.full = True
+            self.full = True       
 
     def get(self, batch_size: Optional[int] = None) -> Generator[RolloutBufferSamples_fair, None, None]:
         assert self.full, ""
@@ -353,10 +367,13 @@ class RolloutBuffer_fair(BaseBuffer):
                 "log_probs",
                 "advantages",
                 "returns",
+
+                "deltas",
+                "delta_deltas",
             ]
 
             for tensor in _tensor_names:
-                self.__dict__[tensor] = self.swap_and_flatten_fair(self.__dict__[tensor]) 
+                self.__dict__[tensor] = self.swap_and_flatten_fair(self.__dict__[tensor])
             self.generator_ready = True
 
         # Return everything, don't create minibatches
@@ -375,7 +392,10 @@ class RolloutBuffer_fair(BaseBuffer):
             [self.values[0][batch_inds].flatten(), [self.values[1][g][batch_inds].flatten() for g in range(self.num_groups)], [self.values[2][g][batch_inds].flatten() for g in range(self.num_groups)]],
             self.log_probs[batch_inds].flatten(),
             [self.advantages[0][batch_inds].flatten(), [self.advantages[1][g][batch_inds].flatten() for g in range(self.num_groups)], [self.advantages[2][g][batch_inds].flatten() for g in range(self.num_groups)]],
-            [self.returns[0][batch_inds].flatten(), [self.returns[1][g][batch_inds].flatten() for g in range(self.num_groups)], [self.returns[2][g][batch_inds].flatten() for g in range(self.num_groups)]]
+            [self.returns[0][batch_inds].flatten(), [self.returns[1][g][batch_inds].flatten() for g in range(self.num_groups)], [self.returns[2][g][batch_inds].flatten() for g in range(self.num_groups)]],
+            # only for APPO
+            self.deltas[batch_inds].flatten(),
+            self.delta_deltas[batch_inds].flatten()
         )
         return RolloutBufferSamples_fair(*tuple(map(self.to_torch, data)))
     
@@ -416,7 +436,3 @@ class RolloutBuffer_fair(BaseBuffer):
                         arr_return[i][g] = arr[i][g].swapaxes(0, 1).reshape(shape[0] * shape[1], *shape[2:])
 
             return arr_return
-
-
-# List[Union[np.ndarray,List[np.ndarray]]] is the form [r, [r_U_0,..],[r_B_0,..]]
-# TODO: need to modify all the type checks

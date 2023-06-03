@@ -9,8 +9,10 @@
 */fair_logs
 */results
 */local_scripts
+*/ipynb_checkpoints
 
 */experiments_wrongArchitectureLarge
+
 
 .vscode
 

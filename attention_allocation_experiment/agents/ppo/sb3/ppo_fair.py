@@ -21,8 +21,6 @@ from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
 from attention_allocation_experiment.agents.ppo.sb3.on_policy_algorithm_fair import OnPolicyAlgorithm_fair
 
-from attention_allocation_experiment.config_fair import BUFFER_SIZE_TRAINING
-
 class PPO_fair(OnPolicyAlgorithm_fair):
     """
     Proximal Policy Optimization algorithm (PPO) (clip version)
@@ -70,10 +68,9 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
     Modification
     1. deal with 2M + 1 rewards
-    2. The loss function contains several components
-        a. policy gradient for the main reward
+    2. The loss function contains several components different from before
+        a. overall policy gradient for (the main reward - alpha * soft_bias^2) 
         b. Bellman loss for all value functions
-        c. a mitigation loss (the gradient of this part is consistent with our derivation)
     """
 
     def __init__(
@@ -81,7 +78,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             policy: Union[str, Type[ActorCriticPolicy_fair]],    
             env: Union[GymEnv, str],
             learning_rate: Union[float, Schedule] = 3e-4,
-            n_steps: int = BUFFER_SIZE_TRAINING, # buffer size; original: 2048
+            n_steps: int = 2048,
             batch_size: int = 64,
             n_epochs: int = 10,
             gamma: float = 0.99,
@@ -103,14 +100,9 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
 
-            
-            bias_coef: float = None,  # for mitigation
-            beta_smooth: float = None, # for computing the soft bias
-            
-            eval_write_path: str = None,
-            eval_interval: int = None, # evaluate every eval_interval times of rollout
-
-            modifedEnv: bool = None, # chenghao's modified env
+            mitigation_params: dict = None, # hyperparam of our method, including bias_coef and beta_smooth (for soft bias)
+            baselines_params: dict = None, # hyperparam for GPPO, RPPO and APPO (mainly for APPO)
+            eval_kwargs: dict = None, # args for evaluation (env_eval,  eval_write_path, eval_interval, etc)
     ):
 
         super(PPO_fair, self).__init__(
@@ -138,10 +130,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 spaces.MultiDiscrete,
                 spaces.MultiBinary,
             ),
-
-            eval_write_path = eval_write_path,
-            eval_interval= eval_interval,
-            modifedEnv = modifedEnv # Chenghao's env
+            eval_kwargs = eval_kwargs,
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
@@ -176,8 +165,11 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.normalize_advantage = normalize_advantage
         self.target_kl = target_kl
 
-        self.bias_coef = bias_coef
-        self.beta_smooth = beta_smooth
+        # ours
+        self.bias_coef = mitigation_params['bias_coef']
+        self.beta_smooth = mitigation_params['beta_smooth']
+        # baselines
+        self.baselines_params = baselines_params
 
         if _init_setup_model:
             self._setup_model()
@@ -236,6 +228,30 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         
                 # Advantages shape: (batch_size,)
                 advantages = rollout_data.advantages # a "Fairness List"
+
+                if self.baselines_params['APPO']:
+                    # https://arxiv.org/abs/2210.12546
+                    vt_term = torch.min(
+                        torch.zeros(rollout_data.deltas.shape[0]).cuda(),
+                        -rollout_data.deltas + torch.tensor(self.baselines_params['OMEGA_APPO'], dtype=torch.float32)
+                    )
+
+                    # Compute decrease-in-violation (div) term as part of Eq. 3 from the paper
+                    div_cond = torch.where(rollout_data.deltas > torch.tensor(self.baselines_params['OMEGA_APPO'], dtype=torch.float32).cuda(),
+                                                 torch.tensor(1, dtype=torch.float32).cuda(),
+                                                 torch.tensor(0, dtype=torch.float32).cuda())
+                    div_term = torch.min(torch.zeros(rollout_data.delta_deltas.shape[0]).cuda(),
+                                         -div_cond * rollout_data.delta_deltas)
+
+                    # Bring the 3 terms to scale for numerical stability
+                    advantages[0] = (advantages[0] - torch.min(advantages[0])) / (torch.max(advantages[0]) - torch.min(advantages[0]) + 1e-8)
+                    vt_term = (vt_term - torch.min(vt_term)) / (torch.max(vt_term) - torch.min(vt_term) + 1e-8)
+                    div_term = (div_term - torch.min(div_term)) / (torch.max(div_term) - torch.min(div_term) + 1e-8)
+
+                    # Add terms to advantages
+                    advantages[0] = (self.baselines_params['BETA_0_APPO'] * advantages[0] + \
+                                  self.baselines_params['BETA_1_APPO'] * vt_term + \
+                                  self.baselines_params['BETA_2_APPO'] * div_term)
 
                 # Normalize advantage
                 if self.normalize_advantage:
@@ -302,7 +318,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                                     values[i][g] - rollout_data.old_values[i][g], -clip_range_vf, clip_range_vf
                                 )
 
-                # Value loss using the TD(gae_lambda) target, for 5 rewards
+                # Value loss using the TD(gae_lambda) target, for 2M+1 rewards
                 value_loss = [None, [None for i in range(self.num_groups)], [None for i in range(self.num_groups)]]
                 for i in range(3):
                     if i == 0:
@@ -352,13 +368,12 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 break
 
         self._n_updates += self.n_epochs
-        explained_var = explained_variance(self.rollout_buffer.values[0].flatten(), self.rollout_buffer.returns[0].flatten())
+        
 
         # Logs
+        explained_var = explained_variance(self.rollout_buffer.values[0].flatten(), self.rollout_buffer.returns[0].flatten())
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
-
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses)) 
-
         self.logger.record("train/value_loss", np.mean(value_losses[0])) 
         self.logger.record("train/value_loss_U", np.array([np.mean(array_g) for array_g in value_losses[1]]).mean()) # loss of value_U average acrossed all groups
         self.logger.record("train/value_loss_B", np.array([np.mean(array_g) for array_g in value_losses[2]]).mean()) 
@@ -412,6 +427,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
 def smooth_max(x,beta):
     '''
+    log sum trick
     when beta<0, this is smooth_min
     x: (num_groups,), the R_U/R_B values of each group
     '''
@@ -427,12 +443,22 @@ def soft_bias_value_and_gradient(x,beta):
     '''
     soft_bias = smooth_max(x,beta) - smooth_max(x,-beta)
     compute the value of soft_bias and the gradient of soft_bias w.r.t. the input x
+
+    If num_group == 2, use hard bias instead
     '''
     assert beta is not None, 'beta for computing the soft bias is None. Please specify it'
     assert isinstance(x, torch.Tensor), 'the type of input should be torch.Tensor'
     num_groups = x.size(0)
+    assert num_groups > 1, 'There should be at least two groups in the environment'
+    
+    if num_groups == 2:
+        bias = x.max() - x.min()
+        bias_grad = torch.ones(2)
+        bias_grad[torch.argmin(x)] = -1
+        return bias, bias_grad
+
+    # following: num_groups > 2
     assert num_groups > 2, 'When there are only two groups, do not need to use soft_bias!'
-    # TODO: xyc: implement the hard version; maybe just a very large beta?
 
     x.requires_grad = True
 
