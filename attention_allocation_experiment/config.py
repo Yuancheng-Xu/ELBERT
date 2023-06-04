@@ -15,6 +15,6 @@ EP_TIMESTEPS = 1024 # Number of steps per episode for training
 
 ########## Evaluation ##########
 EVAL_NUM_EPS = 10 # number of episodes for evaluation
-EVAL_INTERVAL = 5 # 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
+EVAL_INTERVAL = 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 1024 # Number of steps per episode for evaluation
 

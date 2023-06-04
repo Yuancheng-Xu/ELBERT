@@ -1,6 +1,4 @@
-import sys
 import os
-sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
 import matplotlib.pyplot as plt
 import numpy as np

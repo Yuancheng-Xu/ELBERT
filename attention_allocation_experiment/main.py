@@ -17,24 +17,23 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 
 import sys
-sys.path.insert(1, '/cmlscratch/xic/FairRL_new/')
-
+sys.path.append('..')
+### environment specific
 from attention_allocation_experiment.config import  EXP_DIR, POLICY_KWARGS_fair, SAVE_FREQ, EVAL_INTERVAL, \
     EP_TIMESTEPS_EVAL, EP_TIMESTEPS, EVAL_NUM_EPS
-from environments.attention_allocation import LocationAllocationEnv, Params
-from environments.rewards import AttentionAllocationReward
-
-# new multiple reward version: 
+from attention_allocation_experiment.environments.attention_allocation import LocationAllocationEnv, Params
+from attention_allocation_experiment.environments.rewards import AttentionAllocationReward
 from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
-from attention_allocation_experiment.agents.ppo.sb3.ppo_fair import PPO_fair
-from attention_allocation_experiment.agents.ppo.sb3.policies_fair import ActorCriticPolicy_fair
-from attention_allocation_experiment.agents.ppo.sb3.utils_fair import DummyVecEnv_fair, Monitor_fair
-
 # plot evaluation
 from attention_allocation_experiment.plot import plot_return_bias
-
 # Chenghao's env
 from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
+
+### general to all environment (sb3)
+from sb3_ppo_fair.ppo_fair import PPO_fair
+from sb3_ppo_fair.policies_fair import ActorCriticPolicy_fair
+from sb3_ppo_fair.utils_fair import DummyVecEnv_fair, Monitor_fair
+
 
 
 device = torch.device("cuda")
@@ -69,8 +68,8 @@ def parser_train():
     parser.add_argument('--zeta_1', type=float, default=0.25) 
     parser.add_argument('--zeta_2', type=float, default=0) # for training (during eval zeta_2 = 0 always). Non-zero for RPPO. 
     # dir name
-    parser.add_argument('--exp_path_env', type=str, default='original') # name of env
-    parser.add_argument('--exp_path_extra', type=str, default='_s_0/') # including seed
+    parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
+    parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
 
     args = parser.parse_args()
     return args
