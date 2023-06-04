@@ -1,6 +1,4 @@
-import sys
 import os
-sys.path.insert(1, '/cmlscratch/xic/FairRL/')
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,19 +6,16 @@ import pandas as pd
 # for smoothing
 from scipy.ndimage.filters import gaussian_filter1d
 
-from infectious_experiment.config_fair import EXP_DIR
-
-
 def plot_return_bias(exp_path, save=True, smooth=-1):
     
     # read data
-    data_pth  = os.path.join(EXP_DIR,exp_path,'eval.csv') 
+    data_pth  = os.path.join(exp_path,'eval.csv') 
     data = pd.read_csv(data_pth, sep=',', header=0)
     
     # to numpy
     num_samples = data['num_timesteps'].to_numpy()
 
-    return_arr = data['return'].to_numpy() # this is the reward averaged across timesteps and episodes, as in infectious_experiment.agents.ppo.sb3.utils_fair
+    return_arr = data['return'].to_numpy() # this is the reward averaged across timesteps and episodes, as in attention_allocation_experiment.agents.ppo.sb3.utils_fair
     benefit_max = data['benefit_max'].to_numpy()
     benefit_min = data['benefit_min'].to_numpy()
     bias = data['bias'].to_numpy()
@@ -34,12 +29,13 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     # plot
     fig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (8,8), sharex=True)
     fig.suptitle('exp path: {}'.format(exp_path))
-    # cash
+    # return
     ax1.plot(num_samples,return_arr)
     ax1.set_ylabel('return')
     ax1.set_title('average return / episode_len')
+#     ax1.set_ylim(0.1,0.6)
     ax1.grid()
-    # TPR
+    # benefit
     ax2.plot(num_samples,benefit_max,label='benefit_max')
     ax2.plot(num_samples,benefit_min,label='benefit_min')
     ax2.legend()
@@ -52,9 +48,10 @@ def plot_return_bias(exp_path, save=True, smooth=-1):
     ax3.axhline(y=0, color='r', linestyle='-')
     ax3.set_title('Bias')
     ax3.ticklabel_format(axis='x', style='sci', scilimits=(0,0))
+#     ax3.set_ylim(-0.05,0.2)
     ax3.grid()
     if save:
-        fig.savefig(os.path.join(EXP_DIR,exp_path,'result.png'))
+        fig.savefig(os.path.join(exp_path,'result.png'))
     else:
         fig.show()
 

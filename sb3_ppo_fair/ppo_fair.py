@@ -453,7 +453,7 @@ def soft_bias_value_and_gradient(x,beta):
     
     if num_groups == 2:
         bias = x.max() - x.min()
-        bias_grad = torch.ones(2)
+        bias_grad = torch.ones(2, device = x.device)
         bias_grad[torch.argmin(x)] = -1
         return bias, bias_grad
 

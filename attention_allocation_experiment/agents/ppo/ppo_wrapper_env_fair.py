@@ -70,6 +70,7 @@ class PPOEnvWrapper_fair(gym.Wrapper):
     self.delta = 0  # The delta term
     self.delta_delta = 0  # The delta(s') - delta(s) part of the decrease-in-violation term of Eq. 3 from the paper, where s' is the consecutive state of s
 
+    self.num_groups = self.env.state.params.n_locations # for using non env specific implementation
 
   def reset(self):
     self.timestep = 0

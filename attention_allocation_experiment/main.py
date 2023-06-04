@@ -48,7 +48,7 @@ def parser_train():
     parser.add_argument('--beta_smooth', type=float, default=5) 
     # baseline param
     parser.add_argument('--algorithm', type=str, default='ours', choices=['ours','APPO','GPPO','RPPO']) 
-    parser.add_argument('--omega_APPO', type=float, default=0.05) 
+    parser.add_argument('--omega_APPO', type=float, default=0.05) # NOTE: this is hardwired in the reward.py
     parser.add_argument('--beta_0_APPO', type=float, default=1) 
     parser.add_argument('--beta_1_APPO', type=float, default=0.15) 
     parser.add_argument('--beta_2_APPO', type=float, default=0.15) 
@@ -66,7 +66,7 @@ def parser_train():
     parser.add_argument('--include_delta', action='store_false', help='whether include the ratio in the observation space')
     parser.add_argument('--zeta_0', type=float, default=1) 
     parser.add_argument('--zeta_1', type=float, default=0.25) 
-    parser.add_argument('--zeta_2', type=float, default=0) # for training (during eval zeta_2 = 0 always). Non-zero for RPPO. 
+    parser.add_argument('--zeta_2', type=float, default=0) # for training (during eval zeta_2 = 0 always). Non-zero for RPPO (zeta_2=10). 
     # dir name
     parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
     parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed

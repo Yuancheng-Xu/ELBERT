@@ -24,7 +24,9 @@ from __future__ import print_function
 
 import numpy as np
 
-from infectious_experiment.config import OMEGA
+# from infectious_experiment.config import OMEGA
+OMEGA = 0.05 # for APPO
+
 from infectious_experiment.environments import core
 
 

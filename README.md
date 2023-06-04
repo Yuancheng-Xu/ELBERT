@@ -1,4 +1,4 @@
-# Policy Optimization with Constraint Advantage Regularization (POCAR)
+# Principled RL Fairness
 
 # Current status
 All enviroment share the same GPPO, RPPO, APPO and our-PPO code base. 

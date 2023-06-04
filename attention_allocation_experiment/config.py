@@ -18,3 +18,17 @@ EVAL_NUM_EPS = 10 # number of episodes for evaluation
 EVAL_INTERVAL = 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 1024 # Number of steps per episode for evaluation
 
+
+
+##### for debugging
+# ########## Training Parameters ##########
+# POLICY_KWARGS_fair = dict(activation_fn=torch.nn.ReLU,
+#                      net_arch = dict(vf=[128, 64], pi=[128, 64]))
+# SAVE_FREQ = 1e8  
+# EP_TIMESTEPS = 128
+
+# ########## Evaluation ##########
+# EVAL_NUM_EPS = 1 
+# EVAL_INTERVAL = 1 
+# EP_TIMESTEPS_EVAL = 128 
+

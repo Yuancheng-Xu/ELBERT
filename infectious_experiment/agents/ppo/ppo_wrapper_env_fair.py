@@ -6,18 +6,18 @@ from gym import spaces
 
 from networkx.algorithms import community
 
-from infectious_experiment.config_fair import EP_TIMESTEPS,ZETA_1, ZETA_0
-
-'''
-Note: I use the original Eric's reward function so that this wrapper also includes RPPO
-'''
-
+# the following should be in the env_param_dict
+# from infectious_experiment.config_fair import EP_TIMESTEPS,ZETA_1, ZETA_0
 
 class PPOEnvWrapper_fair(gym.Wrapper):
+    '''
+    the reward (after applying this wrapper) will be of the form:
+    [main_reward, [r_u_0,r_u_1,r_u_2], [r_b_0, r_b_1, r_b_2]] (assuming there are 3 groups)
+    '''
     def __init__(self,
                  env,
                  reward_fn,
-                 ep_timesteps=EP_TIMESTEPS):
+                 env_param_dict):
         super(PPOEnvWrapper_fair, self).__init__(env)
 
         self.env = env
@@ -38,11 +38,16 @@ class PPOEnvWrapper_fair(gym.Wrapper):
         self.reward_fn = reward_fn()
 
         self.timestep = 0
-        self.ep_timesteps = ep_timesteps
+        self.ep_timesteps = env_param_dict['ep_timesteps']
+        self.zeta_0 = env_param_dict['zeta_0']
+        self.zeta_1 = env_param_dict['zeta_1']
 
         communities_generator = community.girvan_newman(self.env.state.population_graph)
         self.communities = tuple(sorted(c) for c in next(communities_generator))
         self.num_communities = len(self.communities)
+
+        self.num_groups = self.num_communities       # for using non env specific implementation
+
         # Map individuals in the graph to a community
         self.communities_map = {
             individual: comm_i for comm_i, comm in enumerate(self.communities) for individual in comm
@@ -54,6 +59,10 @@ class PPOEnvWrapper_fair(gym.Wrapper):
         self.prev_health_states = copy.deepcopy(self.env.state.health_states)
         # Newly infected in each community (cummulative)
         self.num_newly_infected_per_community = np.zeros(self.num_communities)     # xyc: Currently not used by reward
+
+        # only for APPO
+        self.delta = 0
+        self.delta_delta = 0
 
 
     def format_observation(self, obs):
@@ -90,6 +99,10 @@ class PPOEnvWrapper_fair(gym.Wrapper):
         # Newly infected in each community
         self.num_newly_infected_per_community = np.zeros(self.num_communities)
 
+        # only for APPO
+        self.delta = 0
+        self.delta_delta = 0
+
         return self.format_observation(self.env.reset())
 
     def step(self, action):
@@ -120,18 +133,17 @@ class PPOEnvWrapper_fair(gym.Wrapper):
 
                 r_B[comm_i] += 1
 
-        # if reward_fn is InfectiousReward_fair:
-        assert ZETA_1 == 0, 'ZETA_1>0: Are you sure you are running RPPO? If yes, comment this line'
-        if 'fair' in str(self.reward_fn):
-            r = self.reward_fn(health_states=self.env.state.health_states)
-        # if reward_fn is the same as Eric's
-        else:
-            r = self.reward_fn(health_states=self.env.state.health_states,
+        r = self.reward_fn(health_states=self.env.state.health_states,
                            num_vaccines_per_community=self.num_vaccines_per_community,
                            num_newly_infected_per_community=self.num_newly_infected_per_community,
-                           eta0=ZETA_0,
-                           eta1=ZETA_1)
-
+                           eta0=self.zeta_0,
+                           eta1=self.zeta_1)
+        
+        old_delta = self.delta
+        self.delta = self.reward_fn.calc_delta(num_vaccines_per_community=self.num_vaccines_per_community,
+                                               num_newly_infected_per_community=self.num_newly_infected_per_community)
+        self.delta_delta = self.delta - old_delta
+        
         self.timestep += 1
         if self.timestep == self.ep_timesteps:
             done = True

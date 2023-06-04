@@ -26,7 +26,7 @@ class DummyVecEnv_fair(DummyVecEnv):
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         super().__init__(env_fns)
         
-        self.num_groups = env_fns[0]().env.state.params.n_locations
+        self.num_groups = env_fns[0]().env.num_groups
         self.buf_rews = [np.zeros((self.num_envs,), dtype=np.float32),[np.zeros((self.num_envs,), dtype=np.float32) for g in range(self.num_groups)],[np.zeros((self.num_envs,), dtype=np.float32) for g in range(self.num_groups)]]
 
     def step_wait(self) -> Tuple[VecEnvObs, List[np.ndarray], np.ndarray, List[Dict]]:
@@ -50,7 +50,7 @@ class Monitor_fair(Monitor):
     def __init__(self, env: gym.Env, filename: Optional[str] = None, allow_early_resets: bool = True, reset_keywords: Tuple[str, ...] = (), info_keywords: Tuple[str, ...] = ()):
         super().__init__(env, filename, allow_early_resets, reset_keywords, info_keywords)
 
-        self.num_groups =  env.state.params.n_locations
+        self.num_groups = env.num_groups
         # e.g.: [ [], [[],[],[]], [[],[],[]] ]
         self.rewards: List[Union[List[float],List[List[float]]]] = [[],[[] for g in range(self.num_groups)], [[] for g in range(self.num_groups)]] 
         self.episode_returns: List[Union[List[float],List[List[float]]]] = [[],[[] for g in range(self.num_groups)], [[] for g in range(self.num_groups)]]
@@ -131,7 +131,7 @@ def evaluate_fair(env, agent, num_eps):
     assert str('ActorCriticPolicy_fair') in str(type(agent)), 'evaluate_fair only works for ActorCriticPolicy_fair policy'
     assert str('PPOEnvWrapper_fair') in str(type(env)), 'env should be of type: PPOEnvWrapper_fair and should not be vectorized here'
 
-    num_groups = env.state.params.n_locations
+    num_groups = env.num_groups
     seeds = [random.randint(0, 10000) for _ in range(num_eps)]
     num_timesteps = env.ep_timesteps # number of steps per episodes (unless done=True) 
 

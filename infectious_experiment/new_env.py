@@ -5,8 +5,12 @@ New Lending Env with the following modification from Eric's code
 
 from infectious_experiment.environments.infectious_disease import *
 
-from infectious_experiment.config import INFECTION_PROBABILITY, NUM_TREATMENTS, \
-    BURNIN, GRAPH_NAME, INFECTED_EXIT_PROBABILITY
+########## Env Parameters ##########
+INFECTION_PROBABILITY = 0.5
+INFECTED_EXIT_PROBABILITY = 0.005
+NUM_TREATMENTS = 1
+BURNIN = 1
+GRAPH_NAME = 'karate'
 
 GRAPHS = {'karate': nx.karate_club_graph()}
 
