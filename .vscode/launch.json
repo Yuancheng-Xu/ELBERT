@@ -13,10 +13,13 @@
                   "justMyCode": true,
 
                   "args": [
+                        "--exp_path_env", "debug",
                         "--algorithm", "ours",
-                        "--train_timesteps", "10000",
+                        "--buffer_size_training", "128",
+                        "--train_timesteps", "300",
                         "--exp_path_extra", "_debug",
-                  ]
+                  ],
+                  "cwd": "/cmlscratch/xic/FairRL_new/attention_allocation_experiment/"
             }
       ]
 }
