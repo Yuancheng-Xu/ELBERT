@@ -25,7 +25,8 @@ from __future__ import print_function
 from typing import Any, Optional
 import numpy as np
 
-from lending_experiment.config import OMEGA
+# from lending_experiment.config import OMEGA
+OMEGA = 0.005 # only for APPO
 from lending_experiment.environments import core
 
 
@@ -151,20 +152,20 @@ class LendingReward(core.RewardFn):
 
     return tot_rew
   
-class LendingReward_fair(core.RewardFn):
-  """
-  Computes agent reward
-  different from Eric: here the reward does not depend on tpr at all
-  """
-  def __call__(self,
-               old_bank_cash,
-               bank_cash):
+# class LendingReward_fair(core.RewardFn):
+#   """
+#   Computes agent reward
+#   different from Eric: here the reward does not depend on tpr at all
+#   """
+#   def __call__(self,
+#                old_bank_cash,
+#                bank_cash):
 
-    tot_rew = (bank_cash - old_bank_cash)
+#     tot_rew = (bank_cash - old_bank_cash)
 
-    self.rew_info = {
-      'bank_cash_term': tot_rew,
-      'tot_rew': tot_rew
-    }
+#     self.rew_info = {
+#       'bank_cash_term': tot_rew,
+#       'tot_rew': tot_rew
+#     }
 
-    return tot_rew
+#     return tot_rew

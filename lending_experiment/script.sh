@@ -2,25 +2,121 @@
 
 trap 'kill 0' SIGINT
 
-CUDA_VISIBLE_DEVICES=0 python main_fair.py --modifedEnv --bias_coef 0.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_0 &
-CUDA_VISIBLE_DEVICES=1 python main_fair.py --modifedEnv --bias_coef 2000.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_2000 &
-CUDA_VISIBLE_DEVICES=2 python main_fair.py --modifedEnv --bias_coef 20.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_20 &
-CUDA_VISIBLE_DEVICES=3 python main_fair.py --modifedEnv --bias_coef 50.0 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_50 &
-CUDA_VISIBLE_DEVICES=4 python main_fair.py --modifedEnv --bias_coef 100 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_100 &
-CUDA_VISIBLE_DEVICES=5 python main_fair.py --modifedEnv --bias_coef 200 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_200 &
-CUDA_VISIBLE_DEVICES=6 python main_fair.py --modifedEnv --bias_coef 400 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_400 &
-CUDA_VISIBLE_DEVICES=7 python main_fair.py --modifedEnv --bias_coef 1000 --exp_path Chenghao_env_1/lr_1e-6_samples_5e6/b_1000 
+# GPPO and APPO: specifying --algorithm GPPO/APPO is enough
+# RPPO: also need to specify --zeta_1
+# ours: specify --bias_coef (no need for beta_smooth since only 2 groups)
+
+### modified env: 1e-6
+
+# ours
+# CUDA_VISIBLE_DEVICES=0 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 0 --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 0 --exp_path_extra _lr1e-6_s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 200 --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 200 --exp_path_extra _lr1e-6_s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 1000 --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 1000 --exp_path_extra _lr1e-6_s_1 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 2000 --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=7 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 2000 --exp_path_extra _lr1e-6_s_1 
+
+# baselines
+# CUDA_VISIBLE_DEVICES=0 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm GPPO --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm GPPO --exp_path_extra _lr1e-6_s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _lr1e-6_s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _lr1e-6_s_2 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _lr1e-6_s_0 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _lr1e-6_s_1 &
+# CUDA_VISIBLE_DEVICES=7 python main.py --lr 1e-6 --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _lr1e-6_s_2
+
+### modified env (default: 1e-5)
+
+# ours
+# CUDA_VISIBLE_DEVICES=0 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 0 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 0 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 200 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 200 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 1000 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 1000 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 2000 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=7 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --bias_coef 2000 --exp_path_extra _s_1 
+
+# baselines
+# CUDA_VISIBLE_DEVICES=0 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm GPPO --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm GPPO --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm APPO --exp_path_extra _s_2 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_1 &
+# CUDA_VISIBLE_DEVICES=7 python main.py --modifedEnv --zeta_0 1 --exp_path_env Chenghao_env_05_14 \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_2
 
 
+### Eric's original env
 
+# ours
+# CUDA_VISIBLE_DEVICES=0 python main.py --exp_path_env original \
+# --bias_coef 0 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --exp_path_env original \
+# --bias_coef 0 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --exp_path_env original \
+# --bias_coef 200 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --exp_path_env original \
+# --bias_coef 200 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --exp_path_env original \
+# --bias_coef 1000 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --exp_path_env original \
+# --bias_coef 1000 --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --exp_path_env original \
+# --bias_coef 2000 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=7 python main.py --exp_path_env original \
+# --bias_coef 2000 --exp_path_extra _s_1 
 
-
-
-
-
-
-
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 8.0 --exp_path b_8 &
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 10.0 --exp_path b_10 &
-# CUDA_VISIBLE_DEVICES=1 python main_fair.py --bias_coef 20.0 --exp_path b_20 
-# the last command must not include the last &
+# baselines
+# CUDA_VISIBLE_DEVICES=0 python main.py --exp_path_env original \
+# --algorithm GPPO --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=1 python main.py --exp_path_env original \
+# --algorithm GPPO --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=2 python main.py --exp_path_env original \
+# --algorithm APPO --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=3 python main.py --exp_path_env original \
+# --algorithm APPO --exp_path_extra _s_1 & 
+# CUDA_VISIBLE_DEVICES=4 python main.py --exp_path_env original \
+# --algorithm APPO --exp_path_extra _s_2 & 
+# CUDA_VISIBLE_DEVICES=5 python main.py --exp_path_env original \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_0 & 
+# CUDA_VISIBLE_DEVICES=6 python main.py --exp_path_env original \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_1 &
+# CUDA_VISIBLE_DEVICES=7 python main.py --exp_path_env original \
+# --algorithm RPPO --zeta_1 2 --exp_path_extra _s_2

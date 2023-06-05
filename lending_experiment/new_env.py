@@ -146,8 +146,13 @@ class GeneralDelayedImpactEnv(BaseLendingEnv):
 ############################ new env Ends ############################
 
 # the following should be eventually in main.py and evaluation 
-from lending_experiment.config_fair import  GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
-    CLUSTER_SHIFT_INCREMENT
+# from lending_experiment.config_fair import  GROUP_0_PROB, BANK_STARTING_CASH, INTEREST_RATE, \
+#     CLUSTER_SHIFT_INCREMENT
+GROUP_0_PROB = 0.5
+BANK_STARTING_CASH= 10000
+INTEREST_RATE = 1
+CLUSTER_SHIFT_INCREMENT= 0.01
+
 CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS_1 # chenghao's design; need to import it in config.py in put into main.py in the end
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 env_params = DelayedImpactParams(

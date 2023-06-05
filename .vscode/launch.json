@@ -19,7 +19,7 @@
                         "--train_timesteps", "300",
                         "--exp_path_extra", "_debug",
                   ],
-                  "cwd": "/cmlscratch/xic/FairRL_new/attention_allocation_experiment/"
+                  "cwd": "/cmlscratch/xic/FairRL_new/lending_experiment"
             }
       ]
 }
