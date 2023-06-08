@@ -54,7 +54,7 @@ def parser_train():
     parser.add_argument('--beta_2_APPO', type=float, default=0.15) 
     # training param
     parser.add_argument('--lr', type=float, default=1e-5) 
-    parser.add_argument('--train_timesteps', type=int, default=5e6) 
+    parser.add_argument('--train_timesteps', type=int, default=5e6) # 5e6
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     # base env param
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env; NOTE: will be deprecated
