@@ -48,7 +48,7 @@ def parser_train():
 
     # our method param
     parser.add_argument('--bias_coef', type=float, default=20) 
-    parser.add_argument('--beta_smooth', type=float, default=5) 
+    parser.add_argument('--beta_smooth', type=float, default=-100) 
     # baseline param
     parser.add_argument('--algorithm', type=str, default='ours', choices=['ours','APPO','GPPO','RPPO']) 
     parser.add_argument('--omega_APPO', type=float, default=0.05) # NOTE: this is hardwired in the reward.py
