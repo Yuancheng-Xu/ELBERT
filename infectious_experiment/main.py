@@ -47,6 +47,7 @@ def parser_train():
     parser = argparse.ArgumentParser()
 
     # our method param
+    parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
     parser.add_argument('--bias_coef', type=float, default=20) 
     parser.add_argument('--beta_smooth', type=float, default=-100) 
     # baseline param
@@ -82,6 +83,7 @@ def organize_param(args):
     if args.algorithm == 'APPO' or args.algorithm == 'GPPO':
         args.bias_coef = 0 # disable our method
         args.zeta_1 = 0 # disable RPPO
+        args.main_reward_coef = 1
     elif args.algorithm == 'ours':
         assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
         args.zeta_1 = 0 # disable RPPO
@@ -90,10 +92,12 @@ def organize_param(args):
         assert args.algorithm == 'RPPO', 'Invalid algorithm name. Should be among [ours, APPO, GPPO, RPPO]'
         assert args.zeta_1 >  -1e-5, 'zeta_1 should be positive when using RPPO'
         args.bias_coef = 0 # disable our method
+        args.main_reward_coef = 1
 
     print('\n\n\n',args,'\n\n\n')
     # our method param
-    mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth}
+    mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth, \
+                         'main_reward_coef':args.main_reward_coef}
 
     # baseline param
     baselines_params = {'method':args.algorithm, 'APPO': args.algorithm == 'APPO', 'OMEGA_APPO': args.omega_APPO, \
@@ -131,8 +135,13 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
     if args.algorithm == 'ours':
-        exp_dir  = os.path.join(exp_dir, 'b_{}'.format(args.bias_coef)+args.exp_path_extra)
-        print('Using our method with smooth={}, bias_coef={}'.format(args.beta_smooth,args.bias_coef))
+        if args.main_reward_coef == 1:
+            exp_dir  = os.path.join(exp_dir, 'b_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using our method with bias_coef={}'.format(args.bias_coef))
+        else:
+            exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), \
+                                'b_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using our method with MainCoef={}, bias_coef={}'.format(args.main_reward_coef, args.bias_coef))
     else:
         exp_dir  = os.path.join(exp_dir, args.exp_path_extra)
         print('Using {}'.format(args.algorithm))

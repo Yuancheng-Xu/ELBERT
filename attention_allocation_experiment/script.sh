@@ -7,11 +7,40 @@ trap 'kill 0' SIGINT
 # ours: specify --beta_smooth and --bias_coef 
 
 
+
+####### bias stability test begins #######
+
+main_reward_coef=0
+LR=1e-5
+TrainingSteps=100000
+BETA_SMOOTH=20
+coef_list=(0.1 1 2 5)
+
+
+CUDA_VISIBLE_DEVICES=0 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=1 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=2 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=3 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=4 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=5 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=6 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=7 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original 
+
+####### bias stability test ends #######
+
 ### modified env
 # ours
 
 # LR=1e-5
-# BETA_SMOOTH=20
+# BETA_SMOOTH=30
 # coef_list=(0 2000 4000 6000)
 
 # CUDA_VISIBLE_DEVICES=0 python main.py --lr $LR --modifedEnv --zeta_0 0 --exp_path_env Chenghao_env_05_14 \
@@ -56,8 +85,8 @@ trap 'kill 0' SIGINT
 
 # ours
 
-# LR=1e-4
-# BETA_SMOOTH=10
+# LR=1e-5
+# BETA_SMOOTH=30
 # coef_list=(0 10 20 50)
 
 # CUDA_VISIBLE_DEVICES=0 python main.py --lr $LR --exp_path_env original \

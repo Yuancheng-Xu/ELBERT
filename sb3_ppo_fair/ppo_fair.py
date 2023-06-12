@@ -100,7 +100,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
 
-            mitigation_params: dict = None, # hyperparam of our method, including bias_coef and beta_smooth (for soft bias)
+            mitigation_params: dict = None, # hyperparam of our method, including bias_coef, beta_smooth (for soft bias) & main_reward_coef
             baselines_params: dict = None, # hyperparam for GPPO, RPPO and APPO (mainly for APPO)
             eval_kwargs: dict = None, # args for evaluation (env_eval,  eval_write_path, eval_interval, etc)
     ):
@@ -166,7 +166,9 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.target_kl = target_kl
 
         # ours
-        self.bias_coef = mitigation_params['bias_coef']
+        # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
+        self.main_reward_coef = mitigation_params['main_reward_coef']
+        self.bias_coef = mitigation_params['bias_coef'] 
         self.beta_smooth = mitigation_params['beta_smooth']
         # baselines
         self.baselines_params = baselines_params
@@ -283,7 +285,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                         (value_U_estimate[g]/(value_B_estimate[g]**2)) * advantages[2][g]
 
                 # advantage fair = adv_main_reward - alpha * sum_g (grad_h_g * adv_grad_ratio_U_B_g )
-                advantages_fair = advantages[0] + torch.matmul(advantages_grad_ratio_U_B.t(), grad_h.float()) * (- self.bias_coef)
+                advantages_fair = self.main_reward_coef * advantages[0] + torch.matmul(advantages_grad_ratio_U_B.t(), grad_h.float()) * (- self.bias_coef)
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
