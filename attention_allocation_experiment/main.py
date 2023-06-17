@@ -140,6 +140,7 @@ def get_dir(args):
     '''
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
+    
     if args.algorithm == 'ours':
         if args.policy_evaluation_new:
             exp_dir = os.path.join(exp_dir,'newPE_eval') # only for testing! use PE as in evaluation 

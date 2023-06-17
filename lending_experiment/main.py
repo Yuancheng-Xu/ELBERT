@@ -68,6 +68,9 @@ def parser_train():
     parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
     parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
 
+    # for testing
+    parser.add_argument('--policy_evaluation_new', action='store_true') # If True, use new MC for fairness eta; NOTE: will be deprecated
+
     args = parser.parse_args()
     return args
 
@@ -93,7 +96,8 @@ def organize_param(args):
     print('\n\n\n',args,'\n\n\n')
     # our method param
     mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth, \
-                         'main_reward_coef':args.main_reward_coef}
+                         'main_reward_coef':args.main_reward_coef,
+                         'policy_evaluation_new':args.policy_evaluation_new} # policy_evaluation_new is for testing!
 
     # baseline param
     baselines_params = {'method':args.algorithm, 'APPO': args.algorithm == 'APPO', 'OMEGA_APPO': args.omega_APPO, \
@@ -131,8 +135,10 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
 
-
     if args.algorithm == 'ours':
+        if args.policy_evaluation_new:
+            exp_dir = os.path.join(exp_dir,'newPE_eval') # only for testing! use PE as in evaluation 
+
         if args.main_reward_coef == 1:
             exp_dir  = os.path.join(exp_dir, 'b_{}'.format(args.bias_coef)+args.exp_path_extra)
             print('Using our method with bias_coef={}'.format(args.bias_coef))
