@@ -10,9 +10,9 @@ Instead of one value function, 2*M + 1 value functions are used.
 Architecture steps (assume share_features_extractor=True): 
 1. obs 
 2. features = self.extract_features(obs), shared representation by applying self.features_extractor to obs
-3. apply self.mlp_extractor (2 separateMLPs) to obtain self.forward_actor(features), self.forward_critic(features) 
+3. apply self.mlp_extractor (1 + 2M + 1 separate MLPs) to obtain self.forward_actor(features), self.forward_critic(features) 
 4. apply action_net and value_net respectively
-   value_net: only a linear layer (last layer) of the whole value function
+   value_net: only a linear layer (last layer) of the whole value function (there are 2m+1 of them)
    action_net: transform self.forward_critic(features) into a prob distribution
 """
 
@@ -426,9 +426,9 @@ class ActorCriticPolicy_fair(BasePolicy):
     Architecture steps (assume share_features_extractor=True): 
     1. obs 
     2. features = self.extract_features(obs), shared representation by applying self.features_extractor to obs
-    3. apply self.mlp_extractor (2 separateMLPs) to obtain self.forward_actor(features), self.forward_critic(features) 
+    3. apply self.mlp_extractor (2M+1 + 1 separateMLPs) to obtain self.forward_actor(features), self.forward_critic(features) 
     4. apply action_net and value_net respectively
-        value_net: only a linear layer (last layer) of the whole value function
+        value_net: only a linear layer (last layer) of the whole value function (2M+1 of them)
         action_net: transform self.forward_critic(features) into a prob distribution
     """
 
@@ -877,7 +877,7 @@ class MlpExtractor_fair(nn.Module):
         if isinstance(net_arch, dict):
             # Note: if key is not specificed, assume linear network
             pi_layers_dims = net_arch.get("pi", [])  # Layer sizes of the policy network
-            vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the 5 value networks
+            vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the 2M+1 value networks
         else:
             pi_layers_dims = vf_layers_dims = net_arch
         # Iterate through the policy layers and build the policy net

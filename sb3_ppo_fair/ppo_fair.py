@@ -2,6 +2,10 @@
 This is the new version of PPO_fair
 First compute the "fair advantage function" via the chain rule formula
 Then do the PPO Clipping
+
+NOTE: For GPPO, APPO, RPPO: the following implementation is compatible for them
+if action network and 2M+1 value networks do not shared parameters; Otherwise, 
+the value loss on fairness signal will contribute to gradients of action network.
 '''
 
 import warnings
@@ -78,7 +82,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             policy: Union[str, Type[ActorCriticPolicy_fair]],    
             env: Union[GymEnv, str],
             learning_rate: Union[float, Schedule] = 3e-4,
-            n_steps: int = 2048,
+            n_steps: int = 2048, # buffer_size
             batch_size: int = 64,
             n_epochs: int = 10,
             gamma: float = 0.99,
@@ -176,6 +180,14 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         if _init_setup_model:
             self._setup_model()
 
+        ### test: new way to compute the ratio
+        self.policy_evaluation_new = False
+        if 'policy_evaluation_new' in mitigation_params.keys():
+            self.policy_evaluation_new = mitigation_params['policy_evaluation_new']
+        if self.policy_evaluation_new:
+            print('\n\n Using new way to do policy evaluation for fairness rewards! \n\n')
+        ### end test
+
     def _setup_model(self) -> None:
         super(PPO_fair, self)._setup_model()
 
@@ -268,10 +280,22 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                 # Note: When using gae_lambda = 1 in the buffer, the following are Monte Carlo Estimate
                 value_U_estimate = torch.zeros(self.num_groups, device=self.device)   
                 value_B_estimate = torch.zeros(self.num_groups, device=self.device)  
-                for g in range(self.num_groups):
-                     value_U_estimate[g] = (th.tensor(self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
-                     value_B_estimate[g] = (th.tensor(self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
+
+                if not self.policy_evaluation_new:
+                    # old way, using "returns"
+                    for g in range(self.num_groups):                   
+                            value_U_estimate[g] = (th.tensor(self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
+                            value_B_estimate[g] = (th.tensor(self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
+                else:
+                    # New way! for testing!
+                    # Monte Carlo with gamma = 1
+                    num_episode_this_buffer = (self.rollout_buffer.episode_starts==1).sum()
+                    for g in range(self.num_groups):
+                     value_U_estimate[g] = (th.tensor(self.rollout_buffer.rewards[1][g]).to(self.device)).sum()/num_episode_this_buffer
+                     value_B_estimate[g] = (th.tensor(self.rollout_buffer.rewards[2][g]).to(self.device)).sum()/num_episode_this_buffer
+                
                 ratio_fairness = value_U_estimate / value_B_estimate 
+
 
                 # soft_bias_grad: gradient of soft bias w.r.t the ratio 
                 soft_bias, soft_bias_grad = soft_bias_value_and_gradient(copy.deepcopy(ratio_fairness),self.beta_smooth)
@@ -387,11 +411,11 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.logger.record("train/explained_variance", explained_var)
 
         # from the last buffer (so not the current bias per se)
-        # value_U_0_estimate is TD lambda return estimate (not sum of raw reward as in "ep_rew_mean_U_0" in the log)
-        self.logger.record("rollout/soft_bias_estimate", soft_bias.item()) 
-        self.logger.record("rollout/hard_bias_estimate", (ratio_fairness.max() - ratio_fairness.min()).item()) 
-        self.logger.record("rollout/benefit_max", ratio_fairness.max().item()) 
-        self.logger.record("rollout/benefit_min", ratio_fairness.min().item()) 
+        # value_U_0_estimate is TD lambda return estimate 
+        self.logger.record("rollout_fair/soft_bias_estimate", soft_bias.item()) 
+        self.logger.record("rollout_fair/hard_bias_estimate", (ratio_fairness.max() - ratio_fairness.min()).item()) 
+        self.logger.record("rollout_fair/benefit_max", ratio_fairness.max().item()) 
+        self.logger.record("rollout_fair/benefit_min", ratio_fairness.min().item()) 
 
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())

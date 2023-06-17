@@ -45,7 +45,7 @@ def parser_train():
 
     # our method param
     parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
-    parser.add_argument('--bias_coef', type=float, default=20) 
+    parser.add_argument('--bias_coef', type=float, default=4000) 
     parser.add_argument('--beta_smooth', type=float, default=5) 
     # baseline param
     parser.add_argument('--algorithm', type=str, default='ours', choices=['ours','APPO','GPPO','RPPO']) 
@@ -72,6 +72,9 @@ def parser_train():
     parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
     parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
 
+    # for testing
+    parser.add_argument('--policy_evaluation_new', action='store_true') # If True, use new MC for fairness eta; NOTE: will be deprecated
+
     args = parser.parse_args()
     return args
 
@@ -85,7 +88,9 @@ def organize_param(args):
         args.zeta_2 = 0 # disable RPPO
         args.main_reward_coef = 1
     elif args.algorithm == 'ours':
-        assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
+        if args.bias_coef < -1e-5:
+            print('Using our method with NEGATIVE bias_coef!')
+        # assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
         args.zeta_2 = 0 # disable RPPO
     else:
         # RPPO
@@ -97,7 +102,8 @@ def organize_param(args):
     print('\n\n\n',args,'\n\n\n')
     # our method param
     mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth, \
-                         'main_reward_coef':args.main_reward_coef}
+                         'main_reward_coef':args.main_reward_coef,
+                         'policy_evaluation_new':args.policy_evaluation_new} # policy_evaluation_new is for testing!
 
     # baseline param
     baselines_params = {'method':args.algorithm, 'APPO': args.algorithm == 'APPO', 'OMEGA_APPO': args.omega_APPO, \
@@ -135,6 +141,9 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
     if args.algorithm == 'ours':
+        if args.policy_evaluation_new:
+            exp_dir = os.path.join(exp_dir,'newPE_eval') # only for testing! use PE as in evaluation 
+
         if args.main_reward_coef == 1:
             exp_dir  = os.path.join(exp_dir, 'Smooth_{}'.format(args.beta_smooth),\
                                 'b_{}'.format(args.bias_coef)+args.exp_path_extra)
@@ -149,8 +158,10 @@ def get_dir(args):
         print('Using {}'.format(args.algorithm))
     
     if os.path.isdir(exp_dir):
-        raise ValueError(f'{exp_dir} already exists; You could delete it manually if you want to train again')
-        # print(f'{exp_dir} already exists; You could delete it manually if you want to train again')
+        if 'debug' not in exp_dir:
+            raise ValueError(f'{exp_dir} already exists; You could delete it manually if you want to train again')
+        else:
+            print(f'{exp_dir} already exists! You are in debug mode so this file will be overwritten \n\n')
     # print('exp_dir:{}'.format(exp_dir))
 
     shutil.rmtree(exp_dir, ignore_errors=True) # clear the file first

@@ -217,7 +217,7 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                 raise ValueError('on_step() is False, why?')
                 return False
 
-            self._update_info_buffer(infos)
+            self._update_info_buffer(infos) # update self.ep_info_buffer, which is related to "rollout/ep_rew_mean"; see Monitor_fair in utils_fair.py
             n_steps += 1
 
             if isinstance(self.action_space, gym.spaces.Discrete):
@@ -340,12 +340,9 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                 # self.ep_info_buffer comes from Monitor_fair
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     # ep_info["r"] is the sum of raw reward
+                    # self.ep_info_buffer contains all episode info so far 
+                    # for example, 1 buffer = 4 episode. Then it is appended 4 infos every time
                     self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-                    # TODO: xyc: save the value function information for fairness signals
-                    # self.logger.record("rollout/ep_rew_mean_U_0", safe_mean([ep_info["r_U_0"] for ep_info in self.ep_info_buffer]))
-                    # self.logger.record("rollout/ep_rew_mean_B_0", safe_mean([ep_info["r_B_0"] for ep_info in self.ep_info_buffer]))
-                    # self.logger.record("rollout/ep_rew_mean_U_1", safe_mean([ep_info["r_U_1"] for ep_info in self.ep_info_buffer]))
-                    # self.logger.record("rollout/ep_rew_mean_B_1", safe_mean([ep_info["r_B_1"] for ep_info in self.ep_info_buffer]))
                     self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
                 self.logger.record("time/fps", fps)
                 self.logger.record("time/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")

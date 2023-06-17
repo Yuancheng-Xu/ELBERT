@@ -6,35 +6,147 @@ trap 'kill 0' SIGINT
 # RPPO: also need to specify --zeta_2
 # ours: specify --beta_smooth and --bias_coef 
 
+##### modified env & new policy evaluation
+
+# Chenghao
+# coef needs to include: 0 5 20 50 100 200 500 1000 2000 4000 6000 10000
 
 
-####### bias stability test begins #######
-
-main_reward_coef=0
+main_reward_coef=1
 LR=1e-5
-TrainingSteps=100000
+TrainingSteps=8000000
 BETA_SMOOTH=20
-coef_list=(0.1 1 2 5)
+# coef_list=(0 5 20 50)
 
+CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 
 
-CUDA_VISIBLE_DEVICES=0 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+##### original env & new policy evaluation
+
+# chenghao
+# coef: 0 1 2 5 10 20 30 50 100 200 500 1000
+
+main_reward_coef=1
+LR=1e-5
+TrainingSteps=8000000
+BETA_SMOOTH=20
+# coef_list=(0 1 2 5)
+
+CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=1 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=2 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=3 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=4 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=5 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=6 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-CUDA_VISIBLE_DEVICES=7 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original 
 
-####### bias stability test ends #######
+
+####### new_PE ends
+
+
+#### previous
+
+#### original env
+
+# main_reward_coef=0 # 0 for stability test
+# LR=1e-6
+# TrainingSteps=5000000
+# BETA_SMOOTH=20
+# coef_list=(5 10 20 50)
+# # 5 10 20 50 
+
+# # # one seeds
+# CUDA_VISIBLE_DEVICES=4 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=5 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=6 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=7 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original 
+
+# two seeds
+# CUDA_VISIBLE_DEVICES=0 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=1 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=2 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=3 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=4 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=5 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=6 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+# CUDA_VISIBLE_DEVICES=7 python main.py --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original 
+
+##### modified env
+
+# main_reward_coef=0 # 0 for stability test
+# LR=1e-6
+# TrainingSteps=5000000
+# BETA_SMOOTH=20
+# # coef_list=(10 50 100 200)
+# coef_list=(0 1 2 5)
+
+# # one seed
+
+# CUDA_VISIBLE_DEVICES=0 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=1 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=2 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=3 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 
+
+
+
+# two seeds
+
+# CUDA_VISIBLE_DEVICES=0 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=1 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=2 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=3 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=4 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=5 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=6 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=7 python main.py --modifedEnv --zeta_0 0 --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --beta_smooth $BETA_SMOOTH --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 
+
 
 ### modified env
 # ours

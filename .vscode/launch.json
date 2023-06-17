@@ -15,11 +15,11 @@
                   "args": [
                         "--exp_path_env", "debug",
                         "--algorithm", "ours",
-                        "--buffer_size_training", "128",
-                        "--train_timesteps", "300",
+                        "--buffer_size_training", "4096",
+                        "--train_timesteps", "30000",
                         "--exp_path_extra", "_debug",
                   ],
-                  "cwd": "/cmlscratch/xic/FairRL_new/lending_experiment"
+                  "cwd": "/cmlscratch/xic/FairRL_new/attention_allocation_experiment/"
             }
       ]
 }
