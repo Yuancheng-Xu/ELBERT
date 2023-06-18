@@ -34,9 +34,9 @@ trap 'kill 0' SIGINT
 ##### original env & new policy evaluation
 
 main_reward_coef=1
-LR=1e-6
+LR=1e-5
 TrainingSteps=10000000
-coef_list=(0 10 200 1000 2000) # 0 10 200 1000 2000 5000 10000 20000
+coef_list=(30000 50000 100000 200000) # 0 10 200 1000 2000 5000 10000 20000 & 30000 50000 100000 200000
 
 CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
 --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
