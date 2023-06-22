@@ -27,7 +27,8 @@ from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOE
 # plot evaluation
 from attention_allocation_experiment.plot import plot_return_bias
 # Chenghao's env
-from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
+from attention_allocation_experiment.new_env import GeneralLocationAllocationEnv, GeneralParams, \
+    create_GeneralLocationAllocationEnv
 
 ### general to all environment (sb3)
 from sb3_ppo_fair.ppo_fair import PPO_fair
@@ -59,10 +60,14 @@ def parser_train():
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     # base env param
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env; NOTE: will be deprecated
+    parser.add_argument('--fixedModifedEnv', action='store_false') # If True, use Chenghao's modifed env; NOTE: will be deprecated
     parser.add_argument('--n_locations', type=int, default=5)
     parser.add_argument('--incident_rates','--list', nargs='+', default=[8, 6, 4, 3, 1.5]) # python main.py -incident_rates 8 6 4 3 1.5
-    parser.add_argument('--dynamic_rate', type=float, default=0.1) 
-    parser.add_argument('--n_attention_units', type=int, default=6) 
+    # parser.add_argument('--dynamic_rate', type=float, default=0.1)
+    parser.add_argument('--dynamic_rate','--list', nargs='+', default=[0.1]) # python main.py -incident_rates 0.1 
+    parser.add_argument('--n_attention_units', type=int, default=6)
+    parser.add_argument('--alpha', type=float, default=0.2)
+    parser.add_argument('--theta', type=float, default=0.02)
     # env param for wrapper and reward
     parser.add_argument('--include_delta', action='store_false', help='whether include the ratio in the observation space')
     parser.add_argument('--zeta_0', type=float, default=1) 
@@ -110,9 +115,13 @@ def organize_param(args):
                         'BETA_0_APPO':args.beta_0_APPO, 'BETA_1_APPO':args.beta_1_APPO, 'BETA_2_APPO':args.beta_2_APPO}
 
     # base env param
-    env_param_base = {'modifedEnv':args.modifedEnv,
-                      'N_LOCATIONS':args.n_locations, 'INCIDENT_RATES':args.incident_rates, 'DYNAMIC_RATE':args.dynamic_rate,\
-                      'N_ATTENTION_UNITS':args.n_attention_units}
+    assert len(args.incident_rates) == args.n_locations
+    assert len(args.dynamic_rate) == 1 or len(args.dynamic_rate) == 2*args.n_locations
+    if len(args.dynamic_rate) == 2*args.n_locations:
+        args.dynamic_rate = np.reshape(np.array(args.dynamic_rate), 2, args.n_locations)
+    env_param_base = {'modifedEnv':args.modifedEnv, 'fixedModifedEnv':args.fixedModifedEnv, \
+                      'N_LOCATIONS':args.n_locations, 'INCIDENT_RATES':args.incident_rates, 'DYNAMIC_RATE':args.dynamic_rate, \
+                      'N_ATTENTION_UNITS':args.n_attention_units, 'ALPHA':args.alpha, 'THETA':args.theta}
     # env param for wrapper and reward
     env_param_dict_train = {'include_delta':args.include_delta, 'zeta_0':args.zeta_0, 'zeta_1':args.zeta_1, 'zeta_2':args.zeta_2,\
                       'ep_timesteps':EP_TIMESTEPS}
@@ -223,9 +232,22 @@ def main():
             extra_incident_prob=tuple(0. for _ in range(env_param_base['N_LOCATIONS'])),
             dynamic_rate=env_param_base['DYNAMIC_RATE'])
         env = LocationAllocationEnv(params=env_params)
-    else:
-        print('main.py: Using Chenghao\'s modified env')
+    elif args.fixedModifiedEnv:
+        print('main.py: Using Chenghao\'s modified env with fixed env params')
         env = create_GeneralLocationAllocationEnv()
+    else:
+        print('main.py: Using Chenghao\'s modified env with new env params')
+        env_params = GeneralParams(
+            n_locations=env_param_base['N_LOCATIONS'],
+            prior_incident_counts=tuple(500 for _ in range(env_param_base['N_LOCATIONS'])),
+            incident_rates=env_param_base['INCIDENT_RATES'],
+            n_attention_units=env_param_base['N_ATTENTION_UNITS'],
+            miss_incident_prob=tuple(0. for _ in range(env_param_base['N_LOCATIONS'])),
+            extra_incident_prob=tuple(0. for _ in range(env_param_base['N_LOCATIONS'])),
+            dynamic_rate=env_param_base['DYNAMIC_RATE'],
+            alpha=env_param_base['ALPHA'],
+            theta=env_param_base['THETA'])
+        env = GeneralLocationAllocationEnv(params=env_params)
 
     train(env = env, mitigation_params = mitigation_params, baselines_params = baselines_params, env_param_dict_train = env_param_dict_train, \
           env_param_dict_eval = env_param_dict_eval, training_params = training_params, eval_kwargs = eval_kwargs)
