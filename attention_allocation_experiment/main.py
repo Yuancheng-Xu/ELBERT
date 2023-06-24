@@ -60,14 +60,13 @@ def parser_train():
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     # base env param
     parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env; NOTE: will be deprecated
-    parser.add_argument('--fixedModifedEnv', action='store_false') # If True, use Chenghao's modifed env; NOTE: will be deprecated
+    parser.add_argument('--fixedModifiedEnv', action='store_false') # If True, use Chenghao's modifed env; NOTE: will be deprecated
     parser.add_argument('--n_locations', type=int, default=5)
-    parser.add_argument('--incident_rates','--list', nargs='+', default=[8, 6, 4, 3, 1.5]) # python main.py -incident_rates 8 6 4 3 1.5
-    # parser.add_argument('--dynamic_rate', type=float, default=0.1)
-    parser.add_argument('--dynamic_rate','--list', nargs='+', default=[0.1]) # python main.py -incident_rates 0.1 
+    parser.add_argument('--incident_rates', type=float, nargs='+', default=[8, 6, 4, 3, 1.5]) # python main.py -incident_rates 8 6 4 3 1.5
+    parser.add_argument('--dynamic_rate', type=float, nargs='+', default=[0.1]) # python main.py -dynamic_rates 0.1 
     parser.add_argument('--n_attention_units', type=int, default=6)
-    parser.add_argument('--alpha', type=float, default=0.2)
-    parser.add_argument('--theta', type=float, default=0.02)
+    parser.add_argument('--alpha', type=float, default=0.02)
+    parser.add_argument('--theta', type=float, default=0.2)
     # env param for wrapper and reward
     parser.add_argument('--include_delta', action='store_false', help='whether include the ratio in the observation space')
     parser.add_argument('--zeta_0', type=float, default=1) 
@@ -116,10 +115,14 @@ def organize_param(args):
 
     # base env param
     assert len(args.incident_rates) == args.n_locations
-    assert len(args.dynamic_rate) == 1 or len(args.dynamic_rate) == 2*args.n_locations
+    assert len(args.dynamic_rate) == 1 or len(args.dynamic_rate) == 2 or len(args.dynamic_rate) == 2*args.n_locations
     if len(args.dynamic_rate) == 2*args.n_locations:
-        args.dynamic_rate = np.reshape(np.array(args.dynamic_rate), 2, args.n_locations)
-    env_param_base = {'modifedEnv':args.modifedEnv, 'fixedModifedEnv':args.fixedModifedEnv, \
+        args.dynamic_rate = np.reshape(args.dynamic_rate, (2, args.n_locations)).tolist()
+    elif len(args.dynamic_rate) == 2:
+        args.dynamic_rate = np.repeat(args.dynamic_rate, args.n_locations).reshape(2, args.n_locations).tolist()
+    else:
+        args.dynamic_rate = args.dynamic_rate[0]
+    env_param_base = {'modifedEnv':args.modifedEnv, 'fixedModifiedEnv':args.fixedModifiedEnv, \
                       'N_LOCATIONS':args.n_locations, 'INCIDENT_RATES':args.incident_rates, 'DYNAMIC_RATE':args.dynamic_rate, \
                       'N_ATTENTION_UNITS':args.n_attention_units, 'ALPHA':args.alpha, 'THETA':args.theta}
     # env param for wrapper and reward
