@@ -21,6 +21,7 @@ import torch
 # import tqdm
 import random
 import copy
+from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 
 class DummyVecEnv_fair(DummyVecEnv):
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
@@ -140,6 +141,7 @@ def evaluate_fair(env, agent, num_eps):
     rewards_all = np.zeros((num_eps, num_timesteps))
     U_all = np.zeros((num_eps, num_groups, num_timesteps))
     B_all = np.zeros((num_eps, num_groups, num_timesteps))
+    rates_all = np.zeros((num_eps, num_groups))
 
 
     for ep in range(num_eps):
@@ -161,12 +163,14 @@ def evaluate_fair(env, agent, num_eps):
             for g in range(num_groups):
                 U_all[ep][g][t] = r[1][g]
                 B_all[ep][g][t] = r[2][g]
+                rates_all[ep][g] = env.env.state.params.incident_rates[g]
 
             if done:
                 break
 
     U = np.sum(U_all,axis=(0,2))
     B = np.sum(B_all,axis=(0,2)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
+    rates = np.mean(rates_all, axis=0)
     # essential (only write these to disk): average across episodes and timesteps
     eval_data_essential = {}
     eval_data_essential['return'] = rewards_all.mean() # average across episodes and timesteps
@@ -174,6 +178,8 @@ def evaluate_fair(env, agent, num_eps):
     for g in range(num_groups):
         eval_data_essential['ratio_{}'.format(g)] = U[g]/B[g]
         ratio_list.append(U[g]/B[g])
+        if isinstance(env, PPOEnvWrapper_fair):
+            eval_data_essential['rate_{}'.format(g)] = rates[g]
     eval_data_essential['bias'] = max(ratio_list) - min(ratio_list)
     eval_data_essential['benefit_max'] = max(ratio_list)
     eval_data_essential['benefit_min'] = min(ratio_list)
