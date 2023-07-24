@@ -6,7 +6,7 @@ original code: https://github.com/DLR-RM/stable-baselines3/blob/master/stable_ba
 original code: https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/monitor.py
 
 3. evaluation
-evaluate the model during training (instead of saving checkpoints as done in Eric's code)
+evaluate the model during training (instead of saving checkpoints as done in APPO's code)
 '''
 import time
 
@@ -18,7 +18,6 @@ from stable_baselines3.common.type_aliases import GymObs
 
 import numpy as np
 import torch
-# import tqdm
 import random
 import copy
 
@@ -90,8 +89,6 @@ class Monitor_fair(Monitor):
             ep_rew = [sum(self.rewards[0]), [sum(self.rewards[1][g]) for g in range(self.num_groups)], [sum(self.rewards[2][g]) for g in range(self.num_groups)]]
             ep_len = len(self.rewards[0])
             assert ep_len == len(self.rewards[1][0]), 'reward lengths are different'
-            # ep_info = {"r": round(ep_rew[0], 6), "r_U_0": round(ep_rew[1], 6), "r_B_0": round(ep_rew[2], 6), "r_U_1": round(ep_rew[3], 6), \
-            #            "r_B_1": round(ep_rew[4], 6), "l": ep_len, "t": round(time.time() - self.t_start, 6)}
             ep_info = {"r": round(ep_rew[0], 6), "l": ep_len, "t": round(time.time() - self.t_start, 6)}
             for key in self.info_keywords:
                 ep_info[key] = info[key]
@@ -149,8 +146,7 @@ def evaluate_fair(env, agent, num_eps):
 
         obs = env.reset()
         done = False
-        # print(f'Evaluation:  Episode {ep}:')
-        # for t in tqdm.trange(num_timesteps):
+        
         for t in range(num_timesteps):
             with torch.no_grad():
                 action = agent.predict(obs)[0]
@@ -166,7 +162,7 @@ def evaluate_fair(env, agent, num_eps):
                 break
 
     U = np.sum(U_all,axis=(0,2))
-    B = np.sum(B_all,axis=(0,2)) + 1 * num_eps # 1 * num_eps is according to the formula in Eric's paper
+    B = np.sum(B_all,axis=(0,2)) + 1 * num_eps # 1 * num_eps is according to the formula in APPO's paper
     # essential (only write these to disk): average across episodes and timesteps
     eval_data_essential = {}
     eval_data_essential['return'] = rewards_all.mean() # average across episodes and timesteps

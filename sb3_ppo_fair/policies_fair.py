@@ -1,9 +1,9 @@
 """Policies: abstract base class and concrete implementations.
-Original code from stable_baselines3.common.policies: https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/policies.html
-Warning: this is from the latest sb3. 
-In Eric paper, an older stablebaseline is used, where net_arch can specified shared structure
+Adapted from stable_baselines3.common.policies: https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/policies.html
+
+In APPO's paper, an older stablebaseline is used, where net_arch can specified shared structure
 (such as net_arch = [256, 256, dict(vf=[256, 128], pi=[256, 128])) with 256,256 is shared, where here it cannot (so  net_arch = [dict(vf=..., pi=...)))
-To run xyc project on Eric'c computer enviroment, the whole super classes of ActorCritic class in the latest sb3 are copied here. 
+To run ELBERT, the whole super classes of ActorCritic class in the newer version of sb3 are copied here. 
 
 Modification (assuming M groups)
 Instead of one value function, 2*M + 1 value functions are used. 
@@ -437,7 +437,7 @@ class ActorCriticPolicy_fair(BasePolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,        # the architectures for all value functions are the same; xyc
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,        # the architectures for all value functions are the same
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -445,9 +445,9 @@ class ActorCriticPolicy_fair(BasePolicy):
         full_std: bool = True,
         use_expln: bool = False,
         squash_output: bool = False,
-        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor, # xyc: FlattenExtractor or other choices? 
+        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-        share_features_extractor: bool = True,                                    # xyc: can also try False; however, when FlattenExtractor is used, does not matter
+        share_features_extractor: bool = True,                                    # when FlattenExtractor is used, share_features_extractor does not effect anything
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -500,7 +500,7 @@ class ActorCriticPolicy_fair(BasePolicy):
         self.features_dim = self.features_extractor.features_dim
         self.vf_features_extractor_U = []
         self.vf_features_extractor_B = []
-        if self.share_features_extractor: # xyc
+        if self.share_features_extractor: 
             self.pi_features_extractor = self.features_extractor
             
             self.vf_features_extractor = self.features_extractor
@@ -514,7 +514,7 @@ class ActorCriticPolicy_fair(BasePolicy):
             for _ in range(self.num_groups):
                 self.vf_features_extractor_U.append(self.make_features_extractor())
                 self.vf_features_extractor_B.append(self.make_features_extractor())
-            raise ValueError('Unshard Architecture has not been tested yet. But it has been implemented, so do the test if you wanna use it')
+            raise ValueError('Unshard Architecture has not been tested yet. But it has been implemented, so do the test if you want to use it')
         self.vf_features_extractor_U = nn.ModuleList(self.vf_features_extractor_U)
         self.vf_features_extractor_B = nn.ModuleList(self.vf_features_extractor_B)
 
@@ -609,7 +609,7 @@ class ActorCriticPolicy_fair(BasePolicy):
         """
         self._build_mlp_extractor()
 
-        latent_dim_pi = self.mlp_extractor.latent_dim_pi # int 
+        latent_dim_pi = self.mlp_extractor.latent_dim_pi 
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
@@ -624,7 +624,7 @@ class ActorCriticPolicy_fair(BasePolicy):
         else:
             raise NotImplementedError(f"Unsupported distribution '{self.action_dist}'.")
 
-        self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1) # a linear layer
+        self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1) 
         self.value_net_U, self.value_net_B = [], []
         for _ in range(self.num_groups):
             self.value_net_U.append( nn.Linear(self.mlp_extractor.latent_dim_vf, 1) )
@@ -639,8 +639,6 @@ class ActorCriticPolicy_fair(BasePolicy):
             # Values from stable-baselines.
             # features_extractor/mlp values are
             # originally from openai/baselines (default gains/init_scales).
-
-            # TODO: xyc: I don't know the name yet, for the ModuleList. Will the parameter passed for all the elements in ModuleList
             module_gains = {
                 self.features_extractor: np.sqrt(2),
                 self.mlp_extractor: np.sqrt(2),

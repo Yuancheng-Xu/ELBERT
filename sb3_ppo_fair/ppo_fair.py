@@ -1,10 +1,9 @@
 '''
-This is the new version of PPO_fair
 First compute the "fair advantage function" via the chain rule formula
 Then do the PPO Clipping
 
 NOTE: For GPPO, APPO, RPPO: the following implementation is compatible for them
-if action network and 2M+1 value networks do not shared parameters; Otherwise, 
+if action network and 2M+1 value networks do not shared parameters (we use this setting); Otherwise, 
 the value loss on fairness signal will contribute to gradients of action network.
 '''
 
@@ -85,7 +84,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             n_steps: int = 2048, # buffer_size
             batch_size: int = 64,
             n_epochs: int = 10,
-            gamma: float = 0.99,
+            gamma: float = 0.99,  
             gae_lambda: float = 0.95,
             clip_range: Union[float, Schedule] = 0.2,
             clip_range_vf: Union[None, float, Schedule] = None,
@@ -104,7 +103,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
 
-            mitigation_params: dict = None, # hyperparam of our method, including bias_coef, beta_smooth (for soft bias) & main_reward_coef
+            mitigation_params: dict = None, # hyperparam of our method ELBERT, including bias_coef, beta_smooth (for soft bias) & main_reward_coef
             baselines_params: dict = None, # hyperparam for GPPO, RPPO and APPO (mainly for APPO)
             eval_kwargs: dict = None, # args for evaluation (env_eval,  eval_write_path, eval_interval, etc)
     ):
@@ -169,7 +168,7 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.normalize_advantage = normalize_advantage
         self.target_kl = target_kl
 
-        # ours
+        # ELBERT
         # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
         self.main_reward_coef = mitigation_params['main_reward_coef']
         self.bias_coef = mitigation_params['bias_coef'] 
@@ -179,14 +178,6 @@ class PPO_fair(OnPolicyAlgorithm_fair):
 
         if _init_setup_model:
             self._setup_model()
-
-        ### test: new way to compute the ratio
-        self.policy_evaluation_new = False
-        if 'policy_evaluation_new' in mitigation_params.keys():
-            self.policy_evaluation_new = mitigation_params['policy_evaluation_new']
-        if self.policy_evaluation_new:
-            print('\n\n Using new way to do policy evaluation for fairness rewards! \n\n')
-        ### end test
 
     def _setup_model(self) -> None:
         super(PPO_fair, self)._setup_model()
@@ -274,21 +265,22 @@ class PPO_fair(OnPolicyAlgorithm_fair):
                         advantages[1][g] = (advantages[1][g] - advantages[1][g].mean()) / (advantages[1][g].std() + 1e-8)
                         advantages[2][g] = (advantages[2][g] - advantages[2][g].mean()) / (advantages[2][g].std() + 1e-8)
 
-                # Estimate for fairness return signals: Use the TD lambda return of the first state in each episode (buffer contain several episodes)
-                # Note: use the whole buffer (not minibatch); 
-                # since rollout_buffer.returns does not change during one call of train(), these estimate will be the same in every for loop
-                # Note: When using gae_lambda = 1 in the buffer, the following are Monte Carlo Estimate
+                # Estimate fairness return signals using the whole buffer (not minibatch)
+                # since rollout_buffer.returns does not change during one call of train(), these estimate will be the same in every for-loop
+                # Method 1 (deprecated): Use the TD lambda return of the first state in each episode (buffer contain several episodes)
+                # Method 2 (actually used): Use Monte Carlo with gamma = 1
+                # when gae_lambda = 1 and gamma = 1, the two methods are the same
                 value_U_estimate = torch.zeros(self.num_groups, device=self.device)   
                 value_B_estimate = torch.zeros(self.num_groups, device=self.device)  
 
-                if not self.policy_evaluation_new:
-                    # old way, using "returns"
+                if False:
+                    # Method 1 (deprecated)
                     for g in range(self.num_groups):                   
                             value_U_estimate[g] = (th.tensor(self.rollout_buffer.returns[1][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
                             value_B_estimate[g] = (th.tensor(self.rollout_buffer.returns[2][g][self.rollout_buffer.episode_starts==1]).to(self.device)).mean()
+                    raise ValueError('This way of computing fairness return signals is deprecated. We keep the code here only for reference')
                 else:
-                    # New way! for testing!
-                    # Monte Carlo with gamma = 1
+                    # Method 2 (Monte Carlo with gamma = 1)
                     num_episode_this_buffer = (self.rollout_buffer.episode_starts==1).sum()
                     for g in range(self.num_groups):
                      value_U_estimate[g] = (th.tensor(self.rollout_buffer.rewards[1][g]).to(self.device)).sum()/num_episode_this_buffer
@@ -411,7 +403,6 @@ class PPO_fair(OnPolicyAlgorithm_fair):
         self.logger.record("train/explained_variance", explained_var)
 
         # from the last buffer (so not the current bias per se)
-        # value_U_0_estimate is TD lambda return estimate 
         self.logger.record("rollout_fair/soft_bias_estimate", soft_bias.item()) 
         self.logger.record("rollout_fair/hard_bias_estimate", (ratio_fairness.max() - ratio_fairness.min()).item()) 
         self.logger.record("rollout_fair/benefit_max", ratio_fairness.max().item()) 
@@ -495,13 +486,13 @@ def soft_bias_value_and_gradient(x,beta):
     soft_bias_grad = torch.autograd.grad(outputs=soft_bias, inputs=x)[0].detach()
     x.requires_grad = False
 
-    # xyc test:
+    ### a test using finite difference:
     # print('by auto grad, the first element of the gradient is ',soft_bias_grad[0] )
     # eps = 1e-3
     # x[0] += eps
     # soft_max = smooth_max(x,beta)
     # soft_min = smooth_max(x,-beta)
     # print('by finite difference, it is ', (soft_max-soft_min -soft_bias)/eps)
-    # test ends
+    ### test ends
 
     return (soft_bias).detach(), soft_bias_grad

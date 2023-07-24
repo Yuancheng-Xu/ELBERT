@@ -12,7 +12,6 @@ import json
 
 import numpy as np
 import torch
-# import tqdm
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 
@@ -26,7 +25,7 @@ from attention_allocation_experiment.environments.rewards import AttentionAlloca
 from attention_allocation_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 # plot evaluation
 from attention_allocation_experiment.plot import plot_return_bias
-# Chenghao's env
+# harder env
 from attention_allocation_experiment.new_env import create_GeneralLocationAllocationEnv
 
 ### general to all environment (sb3)
@@ -44,23 +43,22 @@ def parser_train():
     parser = argparse.ArgumentParser()
 
     # our method param
-    parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
     parser.add_argument('--bias_coef', type=float, default=4000) 
     parser.add_argument('--beta_smooth', type=float, default=5) 
     # baseline param
-    parser.add_argument('--algorithm', type=str, default='ours', choices=['ours','APPO','GPPO','RPPO']) 
+    parser.add_argument('--algorithm', type=str, default='ELBERT', choices=['ELBERT','APPO','GPPO','RPPO']) 
     parser.add_argument('--omega_APPO', type=float, default=0.05) # NOTE: this is hardwired in the reward.py
     parser.add_argument('--beta_0_APPO', type=float, default=1) 
     parser.add_argument('--beta_1_APPO', type=float, default=0.15) 
     parser.add_argument('--beta_2_APPO', type=float, default=0.15) 
     # training param
     parser.add_argument('--lr', type=float, default=1e-5) 
-    parser.add_argument('--train_timesteps', type=int, default=5e6) # 5e6
+    parser.add_argument('--train_timesteps', type=int, default=5e6) 
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     # base env param
-    parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env; NOTE: will be deprecated
+    parser.add_argument('--modifedEnv', action='store_true') # If True, use harder environment
     parser.add_argument('--n_locations', type=int, default=5)
-    parser.add_argument('--incident_rates','--list', nargs='+', default=[8, 6, 4, 3, 1.5]) # python main.py -incident_rates 8 6 4 3 1.5
+    parser.add_argument('--incident_rates','--list', nargs='+', default=[8, 6, 4, 3, 1.5]) # python main.py --incident_rates 8 6 4 3 1.5
     parser.add_argument('--dynamic_rate', type=float, default=0.1) 
     parser.add_argument('--n_attention_units', type=int, default=6) 
     # env param for wrapper and reward
@@ -72,8 +70,8 @@ def parser_train():
     parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
     parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
 
-    # for testing
-    parser.add_argument('--policy_evaluation_new', action='store_true') # If True, use new MC for fairness eta; NOTE: will be deprecated
+    # for debugging
+    parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
 
     args = parser.parse_args()
     return args
@@ -87,14 +85,12 @@ def organize_param(args):
         args.bias_coef = 0 # disable our method
         args.zeta_2 = 0 # disable RPPO
         args.main_reward_coef = 1
-    elif args.algorithm == 'ours':
-        if args.bias_coef < -1e-5:
-            print('Using our method with NEGATIVE bias_coef!')
-        # assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
+    elif args.algorithm == 'ELBERT':
+        assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
         args.zeta_2 = 0 # disable RPPO
     else:
         # RPPO
-        assert args.algorithm == 'RPPO', 'Invalid algorithm name. Should be among [ours, APPO, GPPO, RPPO]'
+        assert args.algorithm == 'RPPO', 'Invalid algorithm name. Should be among [ELBERT, APPO, GPPO, RPPO]'
         assert args.zeta_2 >  -1e-5, 'zeta_2 should be positive when using RPPO'
         args.bias_coef = 0 # disable our method
         args.main_reward_coef = 1
@@ -102,8 +98,7 @@ def organize_param(args):
     print('\n\n\n',args,'\n\n\n')
     # our method param
     mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth, \
-                         'main_reward_coef':args.main_reward_coef,
-                         'policy_evaluation_new':args.policy_evaluation_new} # policy_evaluation_new is for testing!
+                         'main_reward_coef':args.main_reward_coef} 
 
     # baseline param
     baselines_params = {'method':args.algorithm, 'APPO': args.algorithm == 'APPO', 'OMEGA_APPO': args.omega_APPO, \
@@ -141,18 +136,15 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
     
-    if args.algorithm == 'ours':
-        if args.policy_evaluation_new:
-            exp_dir = os.path.join(exp_dir,'newPE_eval') # only for testing! use PE as in evaluation 
-
+    if args.algorithm == 'ELBERT':
         if args.main_reward_coef == 1:
-            exp_dir  = os.path.join(exp_dir, 'Smooth_{}'.format(args.beta_smooth),\
-                                'b_{}'.format(args.bias_coef)+args.exp_path_extra)
-            print('Using our method with smooth={}, bias_coef={}'.format(args.beta_smooth,args.bias_coef))
+            exp_dir  = os.path.join(exp_dir, 'smooth_{}'.format(args.beta_smooth),\
+                                'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using ELBERT with smooth={}, bias_coef={}'.format(args.beta_smooth,args.bias_coef))
         else:
-            exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), 'Smooth_{}'.format(args.beta_smooth),\
-                                'b_{}'.format(args.bias_coef)+args.exp_path_extra)
-            print('Using our method with MainCoef={}, smooth={}, bias_coef={}'.format(args.main_reward_coef, args.beta_smooth, args.bias_coef))
+            exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), 'smooth_{}'.format(args.beta_smooth),\
+                                'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using ELBERT with MainCoef={}, smooth={}, bias_coef={}'.format(args.main_reward_coef, args.beta_smooth, args.bias_coef))
     
     else:
         exp_dir  = os.path.join(exp_dir, args.exp_path_extra)
@@ -163,7 +155,6 @@ def get_dir(args):
             raise ValueError(f'{exp_dir} already exists; You could delete it manually if you want to train again')
         else:
             print(f'{exp_dir} already exists! You are in debug mode so this file will be overwritten \n\n')
-    # print('exp_dir:{}'.format(exp_dir))
 
     shutil.rmtree(exp_dir, ignore_errors=True) # clear the file first
     save_dir = f'{exp_dir}/models/'
@@ -195,8 +186,6 @@ def train(env, mitigation_params, baselines_params, env_param_dict_train, env_pa
 
     exp_dir = eval_kwargs['eval_write_path']
     save_dir = f'{exp_dir}/models/'
-    # shutil.rmtree(exp_dir, ignore_errors=True) # clear the file first
-    # Path(save_dir).mkdir(parents=True, exist_ok=True)
 
     checkpoint_callback = CheckpointCallback(save_freq=SAVE_FREQ, save_path=save_dir,
                                              name_prefix='rl_model')
@@ -213,7 +202,7 @@ def main():
     organize_param(args)
     
     if not args.modifedEnv:
-        print('Using the original env in Eric\'s code')
+        print('Using the original env')
         env_params = Params(
             n_locations=env_param_base['N_LOCATIONS'],
             prior_incident_counts=tuple(500 for _ in range(env_param_base['N_LOCATIONS'])),
@@ -224,7 +213,7 @@ def main():
             dynamic_rate=env_param_base['DYNAMIC_RATE'])
         env = LocationAllocationEnv(params=env_params)
     else:
-        print('main.py: Using Chenghao\'s modified env')
+        print('main.py: Using the harder modified env')
         env = create_GeneralLocationAllocationEnv()
 
     train(env = env, mitigation_params = mitigation_params, baselines_params = baselines_params, env_param_dict_train = env_param_dict_train, \

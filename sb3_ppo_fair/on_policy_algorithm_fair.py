@@ -130,7 +130,6 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        # buffer_cls = DictRolloutBuffer if isinstance(self.observation_space, gym.spaces.Dict) else RolloutBuffer_fair # original code
         buffer_cls = RolloutBuffer_fair
         if isinstance(self.observation_space, gym.spaces.Dict):
             raise ValueError('Using DictRolloutBuffer from sb3; Why? Then need to rewrite their buffer too?')
@@ -237,13 +236,11 @@ class OnPolicyAlgorithm_fair(BaseAlgorithm):
                         # TODO: check whether the following is correct
                         predicted_values = self.policy.predict_values(terminal_obs)
                         terminal_value = [predicted_values[0][0], [predicted_values[1][g][0] for g in range(self.num_groups)], [predicted_values[2][g][0] for g in range(self.num_groups)]]
-                        # terminal_value = self.policy.predict_values(terminal_obs)[0] # original code
 
                     rewards[0][idx] += self.gamma * terminal_value[0]
                     for g in range(self.num_groups):
                         rewards[1][g][idx] += self.gamma * terminal_value[1][g]
                         rewards[2][g][idx] += self.gamma * terminal_value[2][g]
-                    # rewards[idx] += self.gamma * terminal_value # original code
 
             # only for APPO
             delta = th.tensor(env.get_attr('delta'))

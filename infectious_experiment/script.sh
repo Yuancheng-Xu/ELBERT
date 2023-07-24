@@ -10,52 +10,52 @@ trap 'kill 0' SIGINT
 
 # Chenghao
 
-main_reward_coef=1
-LR=1e-5
-TrainingSteps=10000000
-# coef_list=(0 0.1 0.5 1) # 0 0.1 0.5 1 2 5 10 20 50 100 200 500 
+# main_reward_coef=1
+# LR=1e-5
+# TrainingSteps=10000000
+# # coef_list=(0 0.1 0.5 1) # 0 0.1 0.5 1 2 5 10 20 50 100 200 500 
 
-CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
-CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
---bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 
+# CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env Chenghao_env_05_14 &
+# CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --modifedEnv --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+# --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env Chenghao_env_05_14 
 
 
 ##### original env & new policy evaluation
 
-# main_reward_coef=1
-# LR=1e-5
-# TrainingSteps=10000000
-# coef_list=(1000 2000 5000 10000) # 0 1 5 20 50 100 200 500 1000 2000 5000 10000
+main_reward_coef=1
+LR=1e-5
+TrainingSteps=10000000
+coef_list=(0.1 0.5 2 10) # 0.1 0.5 2 10 15 25 30 40
 
-# CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
-# CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
-# --bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original 
+CUDA_VISIBLE_DEVICES=0 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=1 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[0]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=2 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=3 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[1]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=4 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=5 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[2]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=6 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_0 --exp_path_env original &
+CUDA_VISIBLE_DEVICES=7 python main.py --policy_evaluation_new --main_reward_coef $main_reward_coef --lr $LR --train_timesteps $TrainingSteps \
+--bias_coef ${coef_list[3]} --exp_path_extra _lr${LR}_s_1 --exp_path_env original 
 
 
 

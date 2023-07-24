@@ -26,7 +26,7 @@ from lending_experiment.environments.rewards import LendingReward
 from lending_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_fair
 # plot evaluation
 from lending_experiment.plot import plot_return_bias
-# Chenghao's env
+# harder env
 from lending_experiment.new_env import create_GeneralDelayedImpactEnv
 
 ### general to all environment (sb3)
@@ -45,11 +45,10 @@ def parser_train():
     parser = argparse.ArgumentParser()
 
     # our method param
-    parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
     parser.add_argument('--bias_coef', type=float, default=1000) 
-    parser.add_argument('--beta_smooth', type=float, default=-1) # two groups, does not matter
+    parser.add_argument('--beta_smooth', type=float, default=-1) # not used since num_group = 2
     # baseline param
-    parser.add_argument('--algorithm', type=str, default='ours', choices=['ours','APPO','GPPO','RPPO']) 
+    parser.add_argument('--algorithm', type=str, default='ELBERT', choices=['ELBERT','APPO','GPPO','RPPO']) 
     parser.add_argument('--omega_APPO', type=float, default=0.005) # NOTE: this is hardwired in the reward.py
     parser.add_argument('--beta_0_APPO', type=float, default=1) 
     parser.add_argument('--beta_1_APPO', type=float, default=0.25) 
@@ -59,7 +58,7 @@ def parser_train():
     parser.add_argument('--train_timesteps', type=int, default=1e7) # 5e6
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     # base env param
-    parser.add_argument('--modifedEnv', action='store_true') # If True, use Chenghao's modifed env; NOTE: will be deprecated
+    parser.add_argument('--modifedEnv', action='store_true') # If True, use harder modifed env
     # env param for wrapper and reward
     parser.add_argument('--include_delta', action='store_false', help='whether include the ratio in the observation space')
     parser.add_argument('--zeta_0', type=float, default=1) 
@@ -68,8 +67,8 @@ def parser_train():
     parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
     parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
 
-    # for testing
-    parser.add_argument('--policy_evaluation_new', action='store_true') # If True, use new MC for fairness eta; NOTE: will be deprecated
+    # for debugging
+    parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
 
     args = parser.parse_args()
     return args
@@ -83,12 +82,12 @@ def organize_param(args):
         args.bias_coef = 0 # disable our method
         args.zeta_1 = 0 # disable RPPO
         args.main_reward_coef = 1
-    elif args.algorithm == 'ours':
+    elif args.algorithm == 'ELBERT':
         assert args.bias_coef > -1e-5, 'bias_coef should be positive when using our method'
         args.zeta_1 = 0 # disable RPPO
     else:
         # RPPO
-        assert args.algorithm == 'RPPO', 'Invalid algorithm name. Should be among [ours, APPO, GPPO, RPPO]'
+        assert args.algorithm == 'RPPO', 'Invalid algorithm name. Should be among [ELBERT, APPO, GPPO, RPPO]'
         assert args.zeta_1 >  -1e-5, 'zeta_1 should be positive when using RPPO'
         args.bias_coef = 0 # disable our method
         args.main_reward_coef = 1
@@ -96,8 +95,7 @@ def organize_param(args):
     print('\n\n\n',args,'\n\n\n')
     # our method param
     mitigation_params = {'bias_coef':args.bias_coef, 'beta_smooth':args.beta_smooth, \
-                         'main_reward_coef':args.main_reward_coef,
-                         'policy_evaluation_new':args.policy_evaluation_new} # policy_evaluation_new is for testing!
+                         'main_reward_coef':args.main_reward_coef}
 
     # baseline param
     baselines_params = {'method':args.algorithm, 'APPO': args.algorithm == 'APPO', 'OMEGA_APPO': args.omega_APPO, \
@@ -135,25 +133,23 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
 
-    if args.algorithm == 'ours':
-        if args.policy_evaluation_new:
-            exp_dir = os.path.join(exp_dir,'newPE_eval') # only for testing! use PE as in evaluation 
-
+    if args.algorithm == 'ELBERT':
         if args.main_reward_coef == 1:
-            exp_dir  = os.path.join(exp_dir, 'b_{}'.format(args.bias_coef)+args.exp_path_extra)
-            print('Using our method with bias_coef={}'.format(args.bias_coef))
+            exp_dir  = os.path.join(exp_dir, 'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using ELBERT with bias_coef={}'.format(args.bias_coef))
         else:
             exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), \
-                                'b_{}'.format(args.bias_coef)+args.exp_path_extra)
-            print('Using our method with MainCoef={}, bias_coef={}'.format(args.main_reward_coef, args.bias_coef))
+                                'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+            print('Using ELBERT with MainCoef={}, bias_coef={}'.format(args.main_reward_coef, args.bias_coef))
     else:
         exp_dir  = os.path.join(exp_dir, args.exp_path_extra)
         print('Using {}'.format(args.algorithm))
     
     if os.path.isdir(exp_dir):
-        raise ValueError(f'{exp_dir} already exists; You could delete it manually if you want to train again')
-        # print(f'{exp_dir} already exists; You could delete it manually if you want to train again')
-    # print('exp_dir:{}'.format(exp_dir))
+        if 'debug' not in exp_dir:
+            raise ValueError(f'{exp_dir} already exists; You could delete it manually if you want to train again')
+        else:
+            print(f'{exp_dir} already exists! You are in debug mode so this file will be overwritten \n\n')
 
     shutil.rmtree(exp_dir, ignore_errors=True) # clear the file first
     save_dir = f'{exp_dir}/models/'
@@ -200,7 +196,7 @@ def main():
     organize_param(args)
     
     if not args.modifedEnv:
-        print('Using the original env in Eric\'s code')
+        print('Using the original env')
         env_params = DelayedImpactParams(
             applicant_distribution=two_group_credit_clusters(
                 cluster_probabilities=env_param_base['CLUSTER_PROBABILITIES'],
@@ -212,7 +208,7 @@ def main():
 
         env = DelayedImpactEnv(env_params)
     else:
-        print('main.py: Using Chenghao\'s modified env')
+        print('main.py: Using harder modified env')
         env = create_GeneralDelayedImpactEnv()
 
     train(env = env, mitigation_params = mitigation_params, baselines_params = baselines_params, env_param_dict_train = env_param_dict_train, \

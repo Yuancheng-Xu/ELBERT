@@ -31,7 +31,7 @@ class RolloutBufferSamples_fair(NamedTuple):
     deltas: th.Tensor   # only used by APPO
     delta_deltas: th.Tensor # only used by APPO
 
-# below are from Eric
+# below are from APPO's paper
 
 # class RolloutBufferSamples(NamedTuple):
 #     observations: th.Tensor

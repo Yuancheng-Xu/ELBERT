@@ -182,7 +182,7 @@ class RolloutBuffer_fair(BaseBuffer):
 
     modification from the previous version:
     1. dealing with 2*M + 1 reward, which involves return, advantage. The order is: r_main, r_U: List, r_B: List
-    We keep the "deltas = tpr difference" and delta_deltas in Eric's paper
+    We keep the "deltas = tpr difference" and delta_deltas in APPO's paper
     """
 
     def __init__(
