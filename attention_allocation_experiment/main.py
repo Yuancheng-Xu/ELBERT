@@ -108,6 +108,7 @@ def organize_param(args):
     env_param_base = {'modifedEnv':args.modifedEnv,
                       'N_LOCATIONS':args.n_locations, 'INCIDENT_RATES':args.incident_rates, 'DYNAMIC_RATE':args.dynamic_rate,\
                       'N_ATTENTION_UNITS':args.n_attention_units}
+    
     # env param for wrapper and reward
     env_param_dict_train = {'include_delta':args.include_delta, 'zeta_0':args.zeta_0, 'zeta_1':args.zeta_1, 'zeta_2':args.zeta_2,\
                       'ep_timesteps':EP_TIMESTEPS}

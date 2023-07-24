@@ -5,6 +5,7 @@
 ./experiments
 */experiments
 */auto_experiments
+*/logs
 */auto_logs
 */fair_logs
 */results
