@@ -11,7 +11,7 @@ OBS_HIST_LEN = 8 # Number of timesteps remembered in observation history
 class PPOEnvWrapper_fair(gym.Wrapper):
   '''
   Observation space: Observation history (of length OBS_HIST_LEN) of incidents seen, occurred, attention allocated per site
-  In Eric's code, it also includes delta terms. Here we can choose to either include delta or not. 
+  In APPO's code, it also includes delta terms. Here we can choose to either include delta or not. 
 
   the reward (after applying this wrapper) will be of the form:
   [main_reward, [r_u_0,r_u_1,r_u_2], [r_b_0, r_b_1, r_b_2]] (assuming there are 3 groups)
@@ -22,7 +22,7 @@ class PPOEnvWrapper_fair(gym.Wrapper):
                env_param_dict):    
     super(PPOEnvWrapper_fair, self).__init__(env)
 
-    self.include_delta =  env_param_dict['include_delta'] # if true, include ratio "delta" in the observation space as in Eric's paper
+    self.include_delta =  env_param_dict['include_delta'] # if true, include ratio "delta" in the observation space as in APPO's paper
     self.ep_timesteps = env_param_dict['ep_timesteps']
     self.zeta_0 = env_param_dict['zeta_0']
     self.zeta_1 = env_param_dict['zeta_1']

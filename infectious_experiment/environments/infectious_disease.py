@@ -399,7 +399,7 @@ def build_sir_model(
   state_names = ['susceptible', 'infected', 'recovered'] 
   healthy_index = 0
   healthy_exit_index = 1
-  infectious_index = 1 # xyc: it seems that healthy_exit "is" infectious
+  infectious_index = 1 # it seems that healthy_exit "is" infectious
   
   # last row: "recover" is an absorbing state
   # first row: do not need to specify here since it is governed by infection_probability. 

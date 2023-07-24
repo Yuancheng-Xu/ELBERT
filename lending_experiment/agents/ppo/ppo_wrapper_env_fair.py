@@ -16,7 +16,7 @@ class PPOEnvWrapper_fair(gym.Wrapper):
     '''
     super(PPOEnvWrapper_fair, self).__init__(env)
 
-    self.include_delta =  env_param_dict['include_delta'] # if true, include ratio "delta" in the observation space as in Eric's paper
+    self.include_delta =  env_param_dict['include_delta'] # if true, include ratio "delta" in the observation space as in APPO's paper
     self.ep_timesteps = env_param_dict['ep_timesteps']
     self.zeta_0 = env_param_dict['zeta_0']
     self.zeta_1 = env_param_dict['zeta_1']

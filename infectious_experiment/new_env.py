@@ -1,5 +1,5 @@
 '''
-New Lending Env with the following modification from Eric's code
+New Lending Env with the following modification from APPO's code
   1. Add vaccine disable probability (P(recovered->suspectible)) so that recovered is not an absorbing state anymore 
 '''
 

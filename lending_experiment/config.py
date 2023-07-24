@@ -26,7 +26,7 @@ SAVE_FREQ = 1e8  # save frequency in timesteps: don't save model for now
 EP_TIMESTEPS = 2048 # Number of steps per episode for training
 
 ########## Evaluation ##########
-EVAL_NUM_EPS = 3 # number of episodes for evaluation: Eric uses 10
+EVAL_NUM_EPS = 3 # number of episodes for evaluation: APPO's paper uses 10
 EVAL_INTERVAL = 5 # number of training rollout per evaluation (1 training rollout is BUFFER_SIZE_TRAINING samples)
 EP_TIMESTEPS_EVAL = 10000 # Number of steps per episode for evaluation
 

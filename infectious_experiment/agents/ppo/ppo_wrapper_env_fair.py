@@ -54,11 +54,11 @@ class PPOEnvWrapper_fair(gym.Wrapper):
         }
 
         # Keep track of how many vaccines go to each community (cummulative)
-        self.num_vaccines_per_community = np.zeros(self.num_communities)           # xyc: Currently not used by reward
+        self.num_vaccines_per_community = np.zeros(self.num_communities)           # Not used by reward
         # Keep track of previous health states to compute newly infected number
         self.prev_health_states = copy.deepcopy(self.env.state.health_states)
         # Newly infected in each community (cummulative)
-        self.num_newly_infected_per_community = np.zeros(self.num_communities)     # xyc: Currently not used by reward
+        self.num_newly_infected_per_community = np.zeros(self.num_communities)     # Not used by reward
 
         # only for APPO
         self.delta = 0
@@ -118,7 +118,7 @@ class PPOEnvWrapper_fair(gym.Wrapper):
 
         # Update the number of vaccines in each community
         if action is not None:
-            # xyc: it seems that this code only works when the number of vaccines <= 1 per step. 
+            # NOTE: it seems that this code only works when the number of vaccines <= 1 per step. 
             comm_i = self.communities_map[action[0]]
             self.num_vaccines_per_community[comm_i] += 1
 

@@ -185,7 +185,7 @@ class InfectiousReward_fair(core.RewardFn):
   def __call__(self, health_states): 
     percent_healthy_term = calc_percent_healthy(health_states)
 
-    tot_rew = percent_healthy_term # xyc: I think it should be current_healthy - previous_healthy!
+    tot_rew = percent_healthy_term
 
     self.rew_info = {
       'percent_healthy': percent_healthy_term,

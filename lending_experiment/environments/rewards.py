@@ -123,7 +123,7 @@ from lending_experiment.environments import core
 
 class LendingReward(core.RewardFn):
   """
-  Eric:
+  APPO's paper:
   Computes r(s_t) defined in the lending experiments section of the paper
   """
   def calc_delta(self, tpr):
@@ -155,7 +155,7 @@ class LendingReward(core.RewardFn):
 # class LendingReward_fair(core.RewardFn):
 #   """
 #   Computes agent reward
-#   different from Eric: here the reward does not depend on tpr at all
+#   different from APPO's paper: here the reward does not depend on tpr at all
 #   """
 #   def __call__(self,
 #                old_bank_cash,
