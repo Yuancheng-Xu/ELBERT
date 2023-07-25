@@ -1,5 +1,5 @@
 '''
-New Attention Allocation Env with the following modification from Eric's code
+New Attention Allocation Env with the following modification from APPO's code
   1. Dynamic rates can be different among groups, and it can depend on whether the location obtain any attention. (for amplifying bias)
   2. For all groups, their dynamic rates decay with the incident rates (for more 'long-term' effect)
   3. If there is not attetion allocated to a group with 0 as current incident rate, then the incdent rate may increase by 1 with some probability
@@ -11,8 +11,8 @@ from attention_allocation_experiment.environments.attention_allocation import *
 N_LOCATIONS_1 = 5
 N_ATTENTION_UNITS_1 = 30
 
-ALPHA = 0.02
-THETA = 0.2
+ALPHA = 0.0
+THETA = 0.0
 
 INCIDENT_RATES_1 = [30, 25, 22.5, 17.5, 12.5]
 

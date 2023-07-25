@@ -1,5 +1,5 @@
 '''
-New Lending Env with the following modification from Eric's code
+New Lending Env with the following modification from APPO's code
   1. When reject, it is still possible for the state to change as if the loan is approved. (for adding stochasticity)
   2. The transition dynamics allows "jumping" from non-contiguent states (for more 'long-term' effect)
 '''
@@ -40,7 +40,7 @@ TRANSITION_DYNAMICS = [
 from lending_experiment.environments.lending import * 
 class _GeneralCreditShift(core.StateUpdater):
   '''
-  Chenghao's code, with the following modification from the original CreditShift function
+  New code, with the following modification from the original CreditShift function
   1. When reject, it is still possible for the state to change as if the loan is approved. (for adding stochasticity)
   2. The transition dynamics allows "jumping" from non-contiguent states (for more 'long-term' effect)
   '''
@@ -133,7 +133,7 @@ class _GeneralCreditShift(core.StateUpdater):
 
 class GeneralDelayedImpactEnv(BaseLendingEnv):
   """
-  Chenghao's code: using _GeneralCreditShift for state transition
+  New code: using _GeneralCreditShift for state transition
   """
   default_param_builder = lending_params.DelayedImpactParams
   _parameter_updater = _GeneralCreditShift()
@@ -153,7 +153,7 @@ BANK_STARTING_CASH= 10000
 INTEREST_RATE = 1
 CLUSTER_SHIFT_INCREMENT= 0.01
 
-CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS_1 # chenghao's design; need to import it in config.py in put into main.py in the end
+CLUSTER_PROBABILITIES = DELAYED_IMPACT_CLUSTER_PROBS_1 # new design; need to import it in config.py in put into main.py in the end
 from lending_experiment.environments.lending_params import DelayedImpactParams, two_group_credit_clusters
 env_params = DelayedImpactParams(
         applicant_distribution=two_group_credit_clusters(

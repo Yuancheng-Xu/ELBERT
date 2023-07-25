@@ -43,8 +43,8 @@ def parser_train():
     parser = argparse.ArgumentParser()
 
     # our method param
-    parser.add_argument('--bias_coef', type=float, default=4000) 
-    parser.add_argument('--beta_smooth', type=float, default=5) 
+    parser.add_argument('--bias_coef', type=float, default=20000) 
+    parser.add_argument('--beta_smooth', type=float, default=20) 
     # baseline param
     parser.add_argument('--algorithm', type=str, default='ELBERT', choices=['ELBERT','APPO','GPPO','RPPO']) 
     parser.add_argument('--omega_APPO', type=float, default=0.05) # NOTE: this is hardwired in the reward.py
@@ -55,6 +55,7 @@ def parser_train():
     parser.add_argument('--lr', type=float, default=1e-5) 
     parser.add_argument('--train_timesteps', type=int, default=5e6) 
     parser.add_argument('--buffer_size_training', type=int, default=4096)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
+    parser.add_argument('--exp_index', type=int, default=0)
     # base env param
     parser.add_argument('--modifedEnv', action='store_true') # If True, use harder environment
     parser.add_argument('--n_locations', type=int, default=5)
@@ -67,8 +68,7 @@ def parser_train():
     parser.add_argument('--zeta_1', type=float, default=0.25) 
     parser.add_argument('--zeta_2', type=float, default=0) # for training (during eval zeta_2 = 0 always). Non-zero for RPPO (zeta_2=10). 
     # dir name
-    parser.add_argument('--exp_path_env', type=str, default='debug') # name of env
-    parser.add_argument('--exp_path_extra', type=str, default='_debug_s_0/') # including seed
+    parser.add_argument('--exp_path_env', type=str, default=None) # name of env
 
     # for debugging
     parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
@@ -94,6 +94,9 @@ def organize_param(args):
         assert args.zeta_2 >  -1e-5, 'zeta_2 should be positive when using RPPO'
         args.bias_coef = 0 # disable our method
         args.main_reward_coef = 1
+
+    if args.exp_path_env is None:
+       args.exp_path_env = 'new_env' if args.modifedEnv else 'ori_env'
 
     print('\n\n\n',args,'\n\n\n')
     # our method param
@@ -140,15 +143,15 @@ def get_dir(args):
     if args.algorithm == 'ELBERT':
         if args.main_reward_coef == 1:
             exp_dir  = os.path.join(exp_dir, 'smooth_{}'.format(args.beta_smooth),\
-                                'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+                                'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
             print('Using ELBERT with smooth={}, bias_coef={}'.format(args.beta_smooth,args.bias_coef))
         else:
             exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), 'smooth_{}'.format(args.beta_smooth),\
-                                'alpha_{}'.format(args.bias_coef)+args.exp_path_extra)
+                                'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
             print('Using ELBERT with MainCoef={}, smooth={}, bias_coef={}'.format(args.main_reward_coef, args.beta_smooth, args.bias_coef))
     
     else:
-        exp_dir  = os.path.join(exp_dir, args.exp_path_extra)
+        exp_dir  = os.path.join(exp_dir, 'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
         print('Using {}'.format(args.algorithm))
     
     if os.path.isdir(exp_dir):
