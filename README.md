@@ -1,18 +1,63 @@
-# Principled RL Fairness
+# Equal Long-term Benefit Rate (ELBERT)
 
-# Current status
-The current implementation differs from the previous one as follows
+## Environment set-up
+First, install [Anaconda](https://docs.anaconda.com/anaconda/install/) to set up virtual environment. Then, run:
+```
+conda create -n pocar python=3.8
+conda activate pocar
+pip install -r requirements.txt
+```
 
-Codebase:
-* All PPO methods (GPPO, APPO, RPPO, ours) use the same codebase (including all sb3 files, env wrapper, ActorCriticPolicy, architecture, observation space, buffer_size, etc). Baselines will be as slow as our method. 
-* sb3 files are shared across all envs. To extract environment specific information such as "incident rate", go to the common sb3 file and save those information there (using if 'attention' in str(env))
-* The script file (except lending env) is more automatic. 
+## Running ELBERT and other baselines 
+The *.scripts/* folder includes bash scripts for ELBERT and other baselines in five enviroments:
+### Lending
+* ELBERT
+```
+bash scripts/lending_elbert.sh
+```
+* Baseline (G-PPO, R-PPO, A-PPO)
+```
+bash scripts/lending_original.sh
+```
+### Infectious control, orginal version
+* ELBERT
+```
+bash scripts/infectious_orienv_elbert.sh
+```
+* Baseline (G-PPO, R-PPO, A-PPO)
+```
+bash scripts/infectious_orienv_original.sh
+```
+### Infectious control, harder version
+* ELBERT
+```
+bash scripts/infectious_newenv_elbert.sh
+```
+* Baseline (G-PPO, R-PPO, A-PPO)
+```
+bash scripts/infectious_newenv_original.sh
+```
+### Attention allocation, orginal version
+* ELBERT
+```
+bash scripts/attention_orienv_elbert.sh
+```
+* Baseline (G-PPO, R-PPO, A-PPO)
+```
+bash scripts/attention_orienv_original.sh
+```
+### Attention allocation, harder version
+* ELBERT
+```
+bash scripts/attention_newenv_elbert.sh
+```
+* Baseline (G-PPO, R-PPO, A-PPO)
+```
+bash scripts/attention_newenv_original.sh
+```
 
-Our method implementation
-* Now, the chain rule is first applied to advantages (including main and fairness advantages), then use the clipped loss of PPO. As comparison, in the old implementation, we first apply clipped loss to compute each gradient, and then compute the chain rule.
 
-
-# Original code
+## Original code
 Authors: Eric Yang Yu, Zhizhen Qin, Min Kyung Lee, Sicun Gao \
 NeurIPS (Conference on Neural Information Processing Systems) 2022
 
