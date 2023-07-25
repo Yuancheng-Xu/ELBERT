@@ -4,6 +4,7 @@
 ### experimental results
 ./experiments
 */experiments
+*/local_experiments
 */auto_experiments
 */logs
 */auto_logs
