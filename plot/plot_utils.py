@@ -23,7 +23,7 @@ def collect_data_csv(exp_path, seeds, timesteps=245):
     count = 0
     for seed in range(seeds):
         try:
-            data_pth  = os.path.join("%s_s_%d" % (exp_path, seed) ,'eval.csv') 
+            data_pth  = os.path.join("%s_expindex_%d" % (exp_path, seed) ,'eval.csv') 
             data = pd.read_csv(data_pth, sep=',', header=0)
             num_samples = data['num_timesteps'].to_numpy()
             return_arr = data['return'].to_numpy()
@@ -38,9 +38,9 @@ def collect_data_csv(exp_path, seeds, timesteps=245):
 
             count += 1
         except:
-            print("%s, seed %d failed!" % (exp_path, seed))
+            print("%s, exp index %d failed!" % (exp_path, seed))
 
-    results = results[:,:actual_len,:]
+    results = results[:count,:actual_len,:]
 
     return results
 

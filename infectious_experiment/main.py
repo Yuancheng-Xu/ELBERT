@@ -27,7 +27,7 @@ from infectious_experiment.agents.ppo.ppo_wrapper_env_fair import PPOEnvWrapper_
 # plot evaluation
 from infectious_experiment.plot import plot_return_bias
 # harder env
-from infectious_experiment.new_env import create_GeneralInfectiousDiseaseEnv
+from infectious_experiment.harder_env import create_GeneralInfectiousDiseaseEnv
 
 ### general to all environment (sb3)
 from sb3_ppo_fair.ppo_fair import PPO_fair
@@ -60,7 +60,7 @@ def parser_train():
     parser.add_argument('--buffer_size_training', type=int, default=5000)  # only for training; for evaluation, the buffer_size = env.ep_timesteps, the number of steps in one episode
     parser.add_argument('--exp_index', type=int, default=0)
     # base env param
-    parser.add_argument('--modifedEnv', action='store_true') # If True, use harder modifed env
+    parser.add_argument('--harderEnv', action='store_true') # If True, use harder harder env
     parser.add_argument('--infection_probability', type=float, default=0.5) 
     parser.add_argument('--infected_exit_probability', type=float, default=0.005) 
     parser.add_argument('--num_treatments', type=int, default=1)
@@ -69,6 +69,7 @@ def parser_train():
     parser.add_argument('--zeta_1', type=float, default=0) # for training (during eval zeta_1 = 0 always). Non-zero for RPPO (zeta_1=0.1). 
     # dir name
     parser.add_argument('--exp_path_env', type=str, default=None) # name of env
+    parser.add_argument('--exp_path_extra', type=str, default=None) # extra suffix
 
     # for debugging
     parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
@@ -96,7 +97,7 @@ def organize_param(args):
         args.main_reward_coef = 1
 
     if args.exp_path_env is None:
-       args.exp_path_env = 'new_env' if args.modifedEnv else 'ori_env'
+       args.exp_path_env = 'harder_env' if args.harderEnv else 'original_env'
 
     print('\n\n\n',args,'\n\n\n')
     # our method param
@@ -108,7 +109,7 @@ def organize_param(args):
                         'BETA_0_APPO':args.beta_0_APPO, 'BETA_1_APPO':args.beta_1_APPO, 'BETA_2_APPO':args.beta_2_APPO}
 
     # base env param
-    env_param_base = {'modifedEnv':args.modifedEnv,
+    env_param_base = {'harderEnv':args.harderEnv,
                       'INFECTION_PROBABILITY':args.infection_probability, 'INFECTED_EXIT_PROBABILITY':args.infected_exit_probability,
                       'NUM_TREATMENTS':args.num_treatments}
     # env param for wrapper and reward
@@ -125,9 +126,14 @@ def organize_param(args):
     eval_kwargs = {'eval_write_path': exp_dir, \
                    'eval_interval':EVAL_INTERVAL, 'num_eps_eval':EVAL_NUM_EPS}
     
+    if args.harderEnv:
+        env_param_base_save = {'harderEnv':True}
+    else:
+        env_param_base_save  = env_param_base
+
     # save args into file
     with open(os.path.join(exp_dir,'params.json'), 'w') as fp:
-        for dict_ in [mitigation_params,baselines_params,env_param_base,env_param_dict_train,training_params,eval_kwargs]:
+        for dict_ in [mitigation_params,baselines_params,env_param_base_save,env_param_dict_train,training_params,eval_kwargs]:
             json.dump(dict_, fp, sort_keys=False, indent=4)
 
     return mitigation_params, baselines_params, env_param_base, env_param_dict_train, env_param_dict_eval, training_params, eval_kwargs
@@ -150,6 +156,9 @@ def get_dir(args):
     else:
         exp_dir  = os.path.join(exp_dir, 'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
         print('Using {}'.format(args.algorithm))
+    
+    if args.exp_path_extra is not None:
+        exp_dir += args.exp_path_extra
     
     if os.path.isdir(exp_dir):
         if 'debug' not in exp_dir:
@@ -202,7 +211,7 @@ def main():
     mitigation_params, baselines_params, env_param_base, env_param_dict_train, env_param_dict_eval, training_params, eval_kwargs = \
     organize_param(args)
     
-    if not args.modifedEnv:
+    if not args.harderEnv:
         print('Using the original env')
         graph = GRAPHS[GRAPH_NAME]
         # Randomly initialize a node to infected
@@ -223,7 +232,7 @@ def main():
             initial_health_state = copy.deepcopy(initial_health_state)
         )
     else:
-        print('main.py: Using harder modified env')
+        print('main.py: Using harder env')
         env = create_GeneralInfectiousDiseaseEnv()
 
     train(env = env, mitigation_params = mitigation_params, baselines_params = baselines_params, env_param_dict_train = env_param_dict_train, \
