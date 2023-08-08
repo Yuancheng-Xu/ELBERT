@@ -69,7 +69,7 @@ def parser_train():
     parser.add_argument('--zeta_1', type=float, default=0) # for training (during eval zeta_1 = 0 always). Non-zero for RPPO (zeta_1=0.1). 
     # dir name
     parser.add_argument('--exp_path_env', type=str, default=None) # name of env
-    parser.add_argument('--exp_path_extra', type=str, default=None) # extra suffix
+    parser.add_argument('--exp_path_extra', type=str, default='') # extra suffix
 
     # for debugging
     parser.add_argument('--main_reward_coef', type=float, default=1) # objective is maximizing main_reward_coef * main_reward - bias_coef * bias^2
@@ -145,20 +145,20 @@ def get_dir(args):
     print('args.exp_path_env :{}'.format(args.exp_path_env))
     exp_dir  = os.path.join(EXP_DIR, args.exp_path_env, args.algorithm)
 
+    if args.exp_path_extra!='':
+        args.exp_path_extra += '_'
+
     if args.algorithm == 'ELBERT':
         if args.main_reward_coef == 1:
-            exp_dir  = os.path.join(exp_dir, 'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
+            exp_dir  = os.path.join(exp_dir, 'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+args.exp_path_extra+'expindex_{}'.format(args.exp_index))
             print('Using ELBERT with bias_coef={}'.format(args.bias_coef))
         else:
             exp_dir  = os.path.join(exp_dir, 'MainCoef_{}'.format(args.main_reward_coef), \
-                                'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
+                                'alpha_{}_'.format(args.bias_coef)+'lr_{}_'.format(args.lr)+args.exp_path_extra+'expindex_{}'.format(args.exp_index))
             print('Using ELBERT with MainCoef={}, bias_coef={}'.format(args.main_reward_coef, args.bias_coef))
     else:
-        exp_dir  = os.path.join(exp_dir, 'lr_{}_'.format(args.lr)+'expindex_{}'.format(args.exp_index))
+        exp_dir  = os.path.join(exp_dir, 'lr_{}_'.format(args.lr)+args.exp_path_extra+'expindex_{}'.format(args.exp_index))
         print('Using {}'.format(args.algorithm))
-    
-    if args.exp_path_extra is not None:
-        exp_dir += args.exp_path_extra
     
     if os.path.isdir(exp_dir):
         if 'debug' not in exp_dir:
