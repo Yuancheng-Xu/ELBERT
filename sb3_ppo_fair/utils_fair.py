@@ -163,15 +163,24 @@ def evaluate_fair(env, agent, num_eps):
 
     U = np.sum(U_all,axis=(0,2))
     B = np.sum(B_all,axis=(0,2)) + 1 * num_eps # 1 * num_eps is according to the formula in APPO's paper
+
     # essential (only write these to disk): average across episodes and timesteps
     eval_data_essential = {}
     eval_data_essential['return'] = rewards_all.mean() # average across episodes and timesteps
     ratio_list = []
     for g in range(num_groups):
         eval_data_essential['ratio_{}'.format(g)] = U[g]/B[g]
+        eval_data_essential['demand_{}'.format(g)] = B[g]/(num_eps*num_timesteps)
+        eval_data_essential['supply_{}'.format(g)] = U[g]/(num_eps*num_timesteps)
         ratio_list.append(U[g]/B[g])
     eval_data_essential['bias'] = max(ratio_list) - min(ratio_list)
+    max_group = np.argmax(ratio_list)
+    min_group = np.argmin(ratio_list)
     eval_data_essential['benefit_max'] = max(ratio_list)
     eval_data_essential['benefit_min'] = min(ratio_list)
+    eval_data_essential['demand_max'] = B[max_group]/(num_eps*num_timesteps)
+    eval_data_essential['demand_min'] = B[min_group]/(num_eps*num_timesteps)
+    eval_data_essential['supply_max'] = U[max_group]/(num_eps*num_timesteps)
+    eval_data_essential['supply_min'] = U[min_group]/(num_eps*num_timesteps)
 
     return eval_data_essential
