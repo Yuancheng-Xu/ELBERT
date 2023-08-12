@@ -3,8 +3,8 @@
 ## Environment set-up
 First, install [Anaconda](https://docs.anaconda.com/anaconda/install/) to set up virtual environment. Then, run:
 ```
-conda create -n pocar python=3.8
-conda activate pocar
+conda env create -f elbert.yaml
+conda activate elbert
 pip install -r requirements.txt
 ```
 
