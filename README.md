@@ -57,9 +57,9 @@ bash scripts/attention_harder_env_original.sh
 ```
 
 
-## Original code
-Authors: Eric Yang Yu, Zhizhen Qin, Min Kyung Lee, Sicun Gao \
-NeurIPS (Conference on Neural Information Processing Systems) 2022
+## Comments
+Our codebase is based on the following repo:
+* [Policy Optimization with Constraint Advantage Regularization](https://github.com/ericyangyu/pocar)
+* [Google ML-fairness-gym](https://github.com/google/ml-fairness-gym)
 
-This is the code implementation for the NeurIPS 2022 [paper](https://arxiv.org/abs/2210.12546) above. 
-Code and environments are adapted from the original Google ML-fairness-gym [repo](https://github.com/google/ml-fairness-gym).
+Thanks for their efforts to make the code public!
