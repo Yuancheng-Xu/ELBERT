@@ -11,11 +11,10 @@
 */fair_logs
 */results
 local_scripts
-./local_scripts
 */local_scripts
 */ipynb_checkpoints
-
-*/plot_xyc.ipynb
+*/local_plot
+*/figures
 
 .vscode/
 
