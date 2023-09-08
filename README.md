@@ -1,5 +1,5 @@
 # Equal Long-term Benefit Rate (ELBERT)
-The codebase for the paper "Equal Long-term Benefit Rate: Adapting Static Fairness Notions to Sequential Decision Making" (https://arxiv.org/abs/2309.03426) by Yuancheng Xu, Chenghao Deng, Yanchao Sun, Ruijie Zheng, Xiyao Wang, Jieyu Zhao, Furong Huang.
+The codebase for the paper "Equal Long-term Benefit Rate: Adapting Static Fairness Notions to Sequential Decision Making" (https://arxiv.org/abs/2309.03426) by Yuancheng Xu*, Chenghao Deng*, Yanchao Sun, Ruijie Zheng, Xiyao Wang, Jieyu Zhao, Furong Huang.
 
 The implementation of ELBERT Policy Optimization (ELBERT-PO) is provided.
 
