@@ -7,10 +7,7 @@
 */local_experiments
 */auto_experiments
 */logs
-*/auto_logs
-*/fair_logs
 */results
-local_scripts
 */local_scripts
 */ipynb_checkpoints
 */local_plot
