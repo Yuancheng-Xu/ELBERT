@@ -6,7 +6,7 @@
   <p align="center">
     <a href="https://yuancheng-xu.github.io"><strong>Yuancheng Xu*</strong></a>
     ·
-    <a><strong>Chenghao Deng*</strong></a>
+    <a href="https://github.com/dengch16"><strong>Chenghao Deng*</strong></a>
     ·
     <a href="https://ycsun2017.github.io"><strong>Yanchao Sun</strong></a>
     ·
