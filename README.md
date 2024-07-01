@@ -1,4 +1,39 @@
-# Equal Long-term Benefit Rate (ELBERT)
+<p align="center">
+
+  <h1 align="center">Adapting Static Fairness to Sequential Decision-Making: Bias Mitigation Strategies towards Equal Long-term Benefit Rate</h1>
+  <h3 align="center"><a href="https://openreview.net/forum?id=yUPBkPKzHw">ICML 2024</a></h3>
+  
+  <p align="center">
+    <a href="https://yuancheng-xu.github.io"><strong>Yuancheng Xu*</strong></a>
+    ·
+    <a><strong>Chenghao Deng*</strong></a>
+    ·
+    <a href="https://ycsun2017.github.io"><strong>Yanchao Sun</strong></a>
+    ·
+    <a href="https://ruijiezheng.com"><strong>Ruijie Zheng</strong></a>
+    ·
+    <a href="https://si0wang.github.io"><strong>Xiyao Wang</strong></a>
+    ·
+    <a href="https://jyzhao.net"><strong>Jieyu Zhao</strong></a>
+    ·
+    <a href="https://furong-huang.com"><strong>Furong Huang</strong></a>
+  </p>
+
+</p>
+
+<h3 align="center">
+  <a href="https://arxiv.org/abs/2309.03426"><strong>[Paper]</strong></a>
+  ·
+   <a href="https://elbert-long-term-fairness.github.io/home/"><strong>[Project page]</strong></a>
+  ·
+  <a href="https://x.com/furongh/status/1714907795684741446"><strong>[X (Twitter)]</strong></a>
+
+</h3>
+
+<div align="center">
+  <img src="./img/poster.png" alt="Logo" width="100%">
+</div>
+
 The codebase for the paper "Equal Long-term Benefit Rate: Adapting Static Fairness Notions to Sequential Decision Making" (https://arxiv.org/abs/2309.03426) by Yuancheng Xu*, Chenghao Deng*, Yanchao Sun, Ruijie Zheng, Xiyao Wang, Jieyu Zhao, Furong Huang.
 
 The implementation of ELBERT Policy Optimization (ELBERT-PO) is provided.
