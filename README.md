@@ -6,7 +6,7 @@
   <p align="center">
     <a href="https://yuancheng-xu.github.io"><strong>Yuancheng Xu*</strong></a>
     ·
-    <a href="https://github.com/dengch16"><strong>Chenghao Deng*</strong></a>
+    <a href="https://deng-chenghao.com"><strong>Chenghao Deng*</strong></a>
     ·
     <a href="https://ycsun2017.github.io"><strong>Yanchao Sun</strong></a>
     ·
@@ -101,3 +101,15 @@ Our codebase is based on the following repo:
 * [Google ML-fairness-gym](https://github.com/google/ml-fairness-gym)
 
 Thanks for their efforts to make the code public!
+
+
+## Citing
+
+Please cite our work if you find it is helpful:
+```
+@inproceedings{xuadapting,
+  title={Adapting Static Fairness to Sequential Decision-Making: Bias Mitigation Strategies towards Equal Long-term Benefit Rate},
+  author={Xu, Yuancheng and Deng, Chenghao and Sun, Yanchao and Zheng, Ruijie and Wang, Xiyao and Zhao, Jieyu and Huang, Furong},
+  booktitle={Forty-first International Conference on Machine Learning}
+}
+```
